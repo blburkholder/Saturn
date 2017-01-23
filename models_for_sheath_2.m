@@ -1,12 +1,28 @@
 function [density,temperature,v_r,v_phi] = models_for_sheath_2()  
     data = get_LANL_moments();
     boundaries = get_location_regions_boundary_data();
+    %sheath from magnetopause
     crossings = crossings_of_interest(boundaries,0);
+    %msphere
+    %crossings = crossings_of_interest(boundaries,1);
+    %sheath from shock
     %crossings = crossings_of_interest_2(boundaries);
     %crossings = horzcat(crossings1,crossings2);
     resolution_in_minutes = 30;
     slices = (24*60)/resolution_in_minutes;
-    k = 60/resolution_in_minutes; 
+    k = 60/resolution_in_minutes;
+    save_data = false;
+    h = 0;
+
+    if save_data
+        moment_times_path_Name_w = '/home/computation/Documents/GitProjects/';
+        moment_times_file_Name_w = 'sheath_500mins.txt';     
+        moment_times_file_Name = horzcat(moment_times_path_Name_w, moment_times_file_Name_w);
+        moment_times_fileID = fopen(moment_times_file_Name, 'w');
+
+        header = 'Year        DOY        Hour       Min       Sec        LT\n'; 
+        fprintf(moment_times_fileID, header); 
+    end
 
     dates = 24*60*(datenum(data(2,:),1,1) + (data(3,:)-1) + data(4,:)/24 + data(5,:)/(24*60)...
             + data(6,:)/(24*60*60) - datenum(2004,1,1));
@@ -14,19 +30,41 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
     [x,y] = size(crossings);
     crossing_by_crossing_average = zeros(y,5);
     cbcLT = zeros(y,1);
+    cbcLT2 = zeros(y,1);
+    cbcR = zeros(y,1);
+    cbc = zeros(y,1);
     for i = 1:y
+        %1 for msphere, 2 for sheath
         if crossings(7,i) == 2
-            ze_condition = ~isnan(data(8,:)) & dates >= crossings(8,i) & dates <= crossings(8,i) + crossings(9,i) & abs(data(27,:)) < 30 & ~data(29,:) & ~data(30,:) & ((data(28,:) < 12 & data(37,:)) | (data(28,:) >= 12 & ~data(37,:))) & dates - crossings(8,i) <= 500;
+            ze_condition = ~isnan(data(8,:)) & dates >= crossings(8,i) &...
+            dates <= crossings(8,i) + crossings(9,i)/2 & abs(data(27,:)) < 30 & ~data(29,:) &...
+            ~data(30,:) & ((data(28,:) < 12 & data(37,:)) | (data(28,:) >= 12 & ~data(37,:))) & dates - crossings(8,i) <= 500;
+
+            ze_condition2 = ~isnan(data(8,:)) & dates >= crossings(8,i) &...
+            dates <= crossings(8,i) + crossings(9,i)/2 & abs(data(27,:)) < 30 & ~data(29,:) &...
+            ~data(30,:) & dates - crossings(8,i) <= 500;
         else
-            ze_condition = ~isnan(data(8,:)) & dates <= crossings(8,i) & dates >= crossings(8,i) - crossings(9,i) & abs(data(27,:)) < 30 & ~data(29,:) & ~data(30,:) & ((data(28,:) < 12 & data(37,:)) | (data(28,:) >= 12 & ~data(37,:))) & crossings(8,i) - dates <= 500;
+            ze_condition = ~isnan(data(8,:)) & dates <= crossings(8,i) &...
+            dates >= crossings(8,i) - crossings(9,i)/2 & abs(data(27,:)) < 30 & ~data(29,:) &...
+            ~data(30,:) & ((data(28,:) < 12 & data(37,:)) | (data(28,:) >= 12 & ~data(37,:))) & crossings(8,i) - dates <= 500;
+
+            ze_condition2 = ~isnan(data(8,:)) & dates <= crossings(8,i) &...
+            dates >= crossings(8,i) - crossings(9,i)/2 & abs(data(27,:)) < 30 & ~data(29,:) &...
+            ~data(30,:) & crossings(8,i) - dates <= 500;
+
         end
 
         densities = data(7,ze_condition & data(7,:) > 0);
         temps = data(8,ze_condition & data(8,:) > -999);
-        v_r_rel = data(9,ze_condition & ~isnan(data(8,:)) & data(9,:) ~= -999);
+        v_r_rel = data(9,ze_condition & data(9,:) ~= -999);
         v_r_fluct = sqrt((v_r_rel - mean(v_r_rel)).^2);
-        v_phi_rel = data(10,ze_condition & ~isnan(data(8,:)) & data(10,:) ~= -999);
-        LT = data(28, ze_condition & ~isnan(data(8,:)) & data(10,:) ~= -999);
+        v_phi_rel = data(10,ze_condition & data(10,:) ~= -999);
+        v_phi_rel2 = data(10,ze_condition2 & data(10,:) ~= -999);
+        LT = data(28, ze_condition & data(10,:) ~= -999);
+        LT2 = data(28, ze_condition & data(10,:) ~= -999);
+        R = data(26, ze_condition & data(10,:) ~= -999);
+
+        these_dates = data(2:6,ze_condition & data(9,:) ~= -999);
 
         %avoid repeat data
         data(7,ze_condition) = 0;
@@ -35,18 +73,32 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
         data(10,ze_condition) = -999;
 
         if ~isempty(v_phi_rel)
+            cbc(i) = nanmean(v_phi_rel2);
+            cbcLT2(i) = nanmean(LT2);
             crossing_by_crossing_average(i,1) = nanmean(v_phi_rel);
             crossing_by_crossing_average(i,2) = nanmean(v_r_rel);
             crossing_by_crossing_average(i,3) = nanmean(v_r_fluct);
             crossing_by_crossing_average(i,4) = geomean(densities);
             crossing_by_crossing_average(i,5) = nanmean(temps);
             cbcLT(i) = nanmean(LT);
-        end  
+            cbcR(i) = nanmean(R);
+        end
+  
+        if save_data
+            pre_and_post_noon = these_dates(:,LT > 10 & LT < 14);
+            pre_and_post_noon_times = LT(LT > 10 & LT < 14);
+            h = h  + length(pre_and_post_noon_times);
+            for not_k = 1:length(pre_and_post_noon_times)
+                times_to_write = [pre_and_post_noon(:,not_k)',pre_and_post_noon_times(not_k)]; 
+                formatSpec_w = ['%f %f %f %f %f %f\n'];          
+                fprintf(moment_times_fileID, formatSpec_w, times_to_write);
+            end
+        end
     end
 
     %flag_view = zeros(1,length(all_v_r(all_vr_LT < 14 & all_vr_LT > 10)));
     %flag_edge_anode = zeros(1,length(all_v_r(all_vr_LT < 14 & all_vr_LT > 10)));
-    %fid = fopen('/home/computation/GitProjects/pre&postnoon_fixed&flagged.txt');
+    %fid = fopen('/home/computation/GitProjects/pre&postnoon_fixed&flagged&halved.txt');
     %FC = textscan(fid,'%s','Delimiter','\n');
     %for i = 1:length(all_v_r(all_vr_LT < 14 & all_vr_LT > 10))
     %    b = FC{1}(i);
@@ -64,6 +116,7 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
     avg_model_data_density = nan(slices,1);
     avg_model_data_v_r = nan(slices,1);
     avg_model_data_v_phi = nan(slices,1);
+    avg_model_data_v_phi2 = nan(slices,1);
     vr_fluct = zeros(slices,1);
 
     for i = 1:slices
@@ -71,8 +124,24 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
         avg_model_data_T(i) =  mean(crossing_by_crossing_average(floor(k*cbcLT) == i & crossing_by_crossing_average(:,5),5));
         avg_model_data_v_r(i) =  mean(crossing_by_crossing_average(floor(k*cbcLT) == i & crossing_by_crossing_average(:,2),2));
         avg_model_data_v_phi(i) = mean(crossing_by_crossing_average(floor(k*cbcLT) == i & crossing_by_crossing_average(:,1),1));
+        avg_model_data_v_phi2(i) = mean(cbc(floor(k*cbcLT2) == i & cbc));
         vr_fluct(i) = mean(crossing_by_crossing_average(floor(k*cbcLT) == i,3));
     end
+
+%    avg_model_data_T = nan(50,1);
+%    avg_model_data_density = nan(50,1);
+%    avg_model_data_v_r = nan(50,1);
+%    avg_model_data_v_phi = nan(50,1);
+%    vr_fluct = zeros(50,1);
+
+%    for i = 1:100
+%        avg_model_data_density(i) = geomean(crossing_by_crossing_average(floor(k*cbcR) == i & crossing_by_crossing_average(:,4),4));
+%        avg_model_data_T(i) =  mean(crossing_by_crossing_average(floor(k*cbcR) == i & crossing_by_crossing_average(:,5),5));
+%        avg_model_data_v_r(i) =  mean(crossing_by_crossing_average(floor(k*cbcR) == i & crossing_by_crossing_average(:,2),2));
+%        avg_model_data_v_phi(i) = mean(crossing_by_crossing_average(floor(k*cbcR) == i & crossing_by_crossing_average(:,1),1));
+%        vr_fluct(i) = mean(crossing_by_crossing_average(floor(k*cbcR) == i,3));
+%    end
+
 
     density_first = find(~isnan(avg_model_data_density),1,'first');
     density_last = find(~isnan(avg_model_data_density),1,'last');
@@ -82,6 +151,8 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
     v_r_last = find(~isnan(avg_model_data_v_r),1,'last');
     v_phi_first = find(~isnan(avg_model_data_v_phi),1,'first');
     v_phi_last = find(~isnan(avg_model_data_v_phi),1,'last');
+    v_phi_first2 = find(~isnan(avg_model_data_v_phi2),1,'first');
+    v_phi_last2 = find(~isnan(avg_model_data_v_phi2),1,'last');
 
     interp_density = interp1(find(~isnan(avg_model_data_density)),avg_model_data_density(~isnan(avg_model_data_density)),density_first:density_last);
     interp_temp = interp1(find(~isnan(avg_model_data_T)),avg_model_data_T(~isnan(avg_model_data_T)),temp_first:temp_last);
@@ -107,17 +178,31 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
 
 
     d2 = avg_model_data_v_phi(v_phi_first+4:22);
+    d22 = avg_model_data_v_phi2(v_phi_first2+4:22);
+
+    %figure
+    %h1 =scatter(1:14,d2,'b')
+    %set(h1, 'SizeData', 100)
+    %hold on
+    %h2 = scatter(1:14,d22,'r*')
+    %set(h2, 'SizeData', 100)
+    %xlabel('Local Time','Interpreter','latex')
+    %ylabel('km/s','Interpreter','latex')
+    %legend('anticorotation assumption','viewing ignored')
+
     d3 = avg_model_data_v_phi(26:v_phi_last);
 
     figure
-    %h = boxplot([d2,d3],'positions',[15,33],'Whisker',0,'Colors','k');
-    %set(h,{'linew'},{1.5});
-    %set(h(7,:),'Visible','off');
+    bar([slices/4,3*slices/4],[mean(d2),mean(d3)])
     hold on
+    h = boxplot([d2,d3],'positions',[15,33],'Whisker',0,'Colors','k');
+    set(h,{'linew'},{1.5});
+    set(h(7,:),'Visible','off');
     xlim auto
     title('v_{\phi}');
     line([slices/2 slices/2],[-300,300],'Color','k');
     line([0 slices],[0,0],'Color','k');
+    %plot(v_phi_first:v_phi_last,smooth_vphi)
     %scatter(v_phi_first:v_phi_last,avg_model_data_v_phi(v_phi_first:v_phi_last),[],vr_fluct(v_phi_first:v_phi_last),'.','SizeData',500)
     scatter(v_phi_first+4:v_phi_last,avg_model_data_v_phi(v_phi_first+4:v_phi_last),'.','SizeData',500)
     ylabel('km/s')
@@ -149,8 +234,10 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
     %set(bb3(1),'facecolor',[r(ceil(nanmean(vr_fluct(26:v_phi_last))/maximum*100)) g(ceil(nanmean(vr_fluct(26:v_phi_last))/maximum*100)) b(ceil(nanmean(vr_fluct(26:v_phi_last))/maximum*100))]); 
 
     figure
-    plot(v_r_first:v_r_last,smooth_vr)
-    line([slices/2 slices/2],[0,200],'Color','k')
+    %plot(v_r_first:v_r_last,smooth_vr)
+    scatter(v_r_first:v_r_last,avg_model_data_v_r(v_r_first:v_r_last),'.','SizeData',500)
+    line([slices/2 slices/2],[-50,250],'Color','k')
+    line([0 slices],[0,0],'Color','k');
     title('v_r')
     hold on
     x1 = linspace(v_r_first,v_r_last);
@@ -168,7 +255,8 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
     hold off
 
     figure
-    plot(density_first:density_last,smooth_density)
+    %plot(density_first:density_last,smooth_density)
+    scatter(density_first:density_last,avg_model_data_density(density_first:density_last),'.','SizeData',500)
     line([slices/2 slices/2],[0,0.3],'Color','k')
     title('density')
     hold on
@@ -188,7 +276,8 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
 
     figure
     %plot(1:72,avg_model_data_T(1:72))
-    plot(temp_first:temp_last,smooth_temp)
+    %plot(temp_first:temp_last,smooth_temp)
+    scatter(temp_first:temp_last,avg_model_data_T(temp_first:temp_last),'.','SizeData',500)
     title('temperature')
     line([slices/2 slices/2],[0,600],'Color','k')
     hold on

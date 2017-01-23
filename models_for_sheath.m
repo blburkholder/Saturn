@@ -7,12 +7,12 @@ function [density,temperature,v_r,v_phi_dawn] = models_for_sheath()
     slices = (24*60)/resolution_in_minutes;
     k = 60/resolution_in_minutes;
     length_of_time_bins_in_mins = 50;    
-    save_data = false;
+    save_data = true;
     h = 0;
 
     if save_data
-        moment_times_path_Name_w = '/home/computation/GitProjects/';
-        moment_times_file_Name_w = 'from_shock.txt';     
+        moment_times_path_Name_w = '/home/computation/Documents/GitProjects/';
+        moment_times_file_Name_w = 'same.txt';     
         moment_times_file_Name = horzcat(moment_times_path_Name_w, moment_times_file_Name_w);
         moment_times_fileID = fopen(moment_times_file_Name, 'w');
 
@@ -38,8 +38,8 @@ function [density,temperature,v_r,v_phi_dawn] = models_for_sheath()
         %while  crossings(8,i) > mag_dates(end)
         %    file = file + 1;
         %    [magnetometer_data] = get_magnetometer_data(file);
-    %		mag_dates = 24*60*(datenum(magnetometer_data(1,:)...
-    %            , magnetometer_data(2,:), magnetometer_data(3,:)...
+    %		 mag_dates = 24*60*(datenum(magnetometer_data(1,:)...
+    %           , magnetometer_data(2,:), magnetometer_data(3,:)...
     %    		, magnetometer_data(4,:), magnetometer_data(5,:)...
     %    		, floor(magnetometer_data(6,:))) - datenum(2004,1,1));
     %    end
@@ -48,21 +48,27 @@ function [density,temperature,v_r,v_phi_dawn] = models_for_sheath()
             %mag_condition = mag_dates >= crossings(8,i) & mag_dates <= crossings(8,i) + crossings(9,i)/2;
             ze_condition = ~isnan(data(8,:)) & dates >= crossings(8,i) & dates <= crossings(8,i)...
                 + crossings(9,i)/2 & abs(data(27,:)) < 30 & ~data(29,:) & ~data(30,:) & data(7,:) > 0 &...
-                ((data(28,:) < 12 & data(37,:)) | (data(28,:) >= 12 & ~data(37,:)) & data(10,:) ~= -999 &...
-                data(9,:) ~= -999 & data(8,:) ~= -999);
+                ((data(28,:) < 12 & data(37,:)) | (data(28,:) >= 12 & ~data(37,:))) & data(10,:) ~= -999 &...
+                data(9,:) ~= -999 & data(8,:) ~= -999;
+            %ze_condition = ~isnan(data(8,:)) & dates >= crossings(8,i) & dates <= crossings(8,i)...
+            %    + crossings(9,i)/2 & abs(data(27,:)) < 30 & ~data(29,:) & ~data(30,:) & data(7,:) > 0 &...
+            %    data(10,:) ~= -999 & data(9,:) ~= -999 & data(8,:) ~= -999;
             TFC = dates(ze_condition) - crossings(8,i);
             %mag_TFC = mag_dates(mag_condition) - crossings(8,i);
         else
             %mag_condition = mag_dates <= crossings(8,i) & mag_dates >= crossings(8,i) - crossings(9,i)/2;
             ze_condition = ~isnan(data(8,:)) & dates <= crossings(8,i) & dates >= crossings(8,i)...
                 - crossings(9,i)/2 & abs(data(27,:)) < 30 & ~data(29,:) & ~data(30,:) & data(7,:) > 0 &...
-                ((data(28,:) < 12 & data(37,:)) | (data(28,:) >= 12 & ~data(37,:)) & data(10,:) ~= -999 &...
-                data(9,:) ~= -999 & data(8,:) ~= -999);
+                ((data(28,:) < 12 & data(37,:)) | (data(28,:) >= 12 & ~data(37,:))) & data(10,:) ~= -999 &...
+                data(9,:) ~= -999 & data(8,:) ~= -999;
+            %ze_condition = ~isnan(data(8,:)) & dates <= crossings(8,i) & dates >= crossings(8,i)...
+            %    - crossings(9,i)/2 & abs(data(27,:)) < 30 & ~data(29,:) & ~data(30,:) & data(7,:) > 0 &...
+            %    data(10,:) ~= -999 & data(9,:) ~= -999 & data(8,:) ~= -999;
             TFC = crossings(8,i) - dates(ze_condition);
             %mag_TFC = crossings(8,i) - mag_dates(mag_condition);
         end
 
-            %these_dates = data(2:6,ze_condition & data(9,:) ~= -999);
+            these_dates = data(2:6,ze_condition & data(9,:) ~= -999);
 
             %mag_points = 10^(-9)*magnetometer_data(10,mag_condition);
             densities = data(7,ze_condition);
@@ -90,8 +96,8 @@ function [density,temperature,v_r,v_phi_dawn] = models_for_sheath()
             end
 
         if save_data
-            pre_and_post_noon = these_dates(:,vphi_LT > 10 & vphi_LT < 14);
-            pre_and_post_noon_times = vphi_LT(vphi_LT > 10 & vphi_LT < 14);
+            pre_and_post_noon = these_dates(:,vphi_LT > 10 & vphi_LT < 14 & TFC < 500);
+            pre_and_post_noon_times = vphi_LT(vphi_LT > 10 & vphi_LT < 14 & TFC < 500);
             h = h  + length(pre_and_post_noon_times);
             for not_k = 1:length(pre_and_post_noon_times)
                 times_to_write = [pre_and_post_noon(:,not_k)',pre_and_post_noon_times(not_k)]; 
@@ -180,7 +186,7 @@ for i = 1:time_bins
     vphi_this_slice(vphi_this_slice == 0) = NaN;
     v_phi_first = find(~isnan(vphi_this_slice),1,'first');
     v_phi_last = find(~isnan(vphi_this_slice),1,'last');
-
+%{
     if sum(~isnan(density_this_slice)) > 1
         interp_density = interp1(find(~isnan(density_this_slice)),density_this_slice(~isnan(density_this_slice)),density_first:density_last);
         smooth_density = interp_density;
@@ -196,7 +202,6 @@ for i = 1:time_bins
         plot(x1,y2)
         hold off
     end
-
     if sum(~isnan(temp_this_slice)) > 1
         interp_temp = interp1(find(~isnan(temp_this_slice)),temp_this_slice(~isnan(temp_this_slice)),temp_first:temp_last);
         smooth_temp = interp_temp;
@@ -251,7 +256,7 @@ for i = 1:time_bins
         plot(x1,y2)
         hold off
     end
-
+%}
 %{
     if sum(~isnan(vphi_this_slice)) > 1
         figure
@@ -294,6 +299,8 @@ end
     h2 = boxplot(bp2','Whisker',0,'Colors','b');
     scatter(1:time_bins,means_time3(:,1),'.r');
     scatter(1:time_bins,means_time3(:,2),'.b');
+    plot(1:time_bins,means_time3(:,1),'--r');
+    plot(1:time_bins,means_time3(:,2),'--b');
     hold off
     set(h1(7,:),'Visible','off');
     set(h2(7,:),'Visible','off');
@@ -314,10 +321,10 @@ end
     %ylabel(h,'v_r fluctuation')
     %h.TickLabels = [0 10 20 30 40 50 60 70 80 90 100];
     title([num2str(dawn1/k),':00-',num2str(dawn2/k),':00 & ',num2str(dusk1/k),':00-',num2str(dusk2/k),':00'])
-    xlabel('Spacecraft time from bow shock crossing (minutes)')
-    ylabel('average V_{\phi} km/s')
+    xlabel('Spacecraft time from bow shock crossing (minutes)','Interpreter','latex')
+    ylabel('average $V_{\phi}$ km/s','Interpreter','latex')
     line([0 slices],[0,0],'Color','k')
-    axis([0 11 -400 400])
+    axis([0 11 -300 300])
     set(gca,'XTickMode','manual');
     set(gca,'XTick',0:4:10);
     set(gca,'XtickLabels',0:200:50*time_bins);

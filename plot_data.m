@@ -148,8 +148,16 @@ for w = 1:3
     color_plot6 = transpose(bsxfun(@rdivide,transpose(color_plot5),max(transpose(color_plot5))));
     color_plot8 = transpose(bsxfun(@rdivide,transpose(color_plot7),max(transpose(color_plot7)))); 
 
+        figure;
+        g = pcolor(1:how_many_windows,1:150,log10(color_plot7));
+        op = colorbar;
+        ylabel(op, 'log(W/m^3)');
+        set(g,'edgecolor','none'); 
+        title('R_0 = 10.3D_p^{-0.20}');
+        grid on
+
     if plot_plot_plot
-%square plots    
+        %square plots    
         figure
         pcolor(1:how_many_windows,1:180,log10(color_plot));
         title('Not normalized latitude')
@@ -256,14 +264,17 @@ t_x = r*cos(theta);
 t_y = r*sin(theta);
 
 figure;
-pcolor(t_x,t_y,log10(transpose(horzcat(sheath_outer_LT_windows,fliplr(sheath_inner_LT_windows),magsphere_LT_windows))));
-colorbar;
+g = pcolor(t_x,t_y,log10(transpose(horzcat(sheath_outer_LT_windows,fliplr(sheath_inner_LT_windows),magsphere_LT_windows))));
+set(g,'edgecolor','none') 
+h = colorbar;
+ylabel(h, 'log(W/m^3)')
 pos = [-1/3 -1/3 2/3 2/3];
-rectangle('Position',pos,'Curvature',[1 1],'EdgeColor','r','linewidth',3)
+rectangle('Position',pos,'Curvature',[1 1],'EdgeColor','r','linewidth',1)
 pos = [-2/3 -2/3 4/3 4/3];
-rectangle('Position',pos,'Curvature',[1 1],'EdgeColor','m','linewidth',3)
+rectangle('Position',pos,'Curvature',[1 1],'EdgeColor','m','linewidth',1)
 pos = [-1 -1 2 2];
-rectangle('Position',pos,'Curvature',[1 1],'EdgeColor','r','linewidth',3)
+rectangle('Position',pos,'Curvature',[1 1],'EdgeColor','r','linewidth',1)
+grid on
 %normalized
 %color_plot4 = transpose(bsxfun(@rdivide,transpose(horzcat(fliplr(sheath_LT_windows),...
     %magsphere_LT_windows)),max(transpose(horzcat(fliplr(sheath_LT_windows),magsphere_LT_windows)))));

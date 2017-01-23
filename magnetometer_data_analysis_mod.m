@@ -25,8 +25,8 @@ Rs = 60268e3; %m
 regions_boundary_data = get_location_regions_boundary_data();
 [rows,cols] = size(regions_boundary_data);
 
-%ordered_crossings = crossings_of_interest(regions_boundary_data,mag_is_1_sheath_is_0);
-ordered_crossings = crossings_of_interest_2(regions_boundary_data); 
+ordered_crossings = crossings_of_interest(regions_boundary_data,mag_is_1_sheath_is_0);
+%ordered_crossings = crossings_of_interest_2(regions_boundary_data); 
 [k,crossings] = size(ordered_crossings);
 
 crossing_date = ordered_crossings(8,1);
@@ -134,6 +134,10 @@ end
             %constant density temp and v
             %[density,T,v_r_rel,v_phi_rel] = find_moment_data(start+j-1,ordered_crossings,moments);
 
+
+%in magnetosphere parameters are determined as a function of R and in
+%sheath they are determined as a function of LT?????????
+
             %if isnan(density) || isnan(T) || isnan(v_r_rel) || isnan(v_phi_rel)
                 v_r_rel = 1000*polyval(coeffs_v_r_rel,bound_LT_and_r(1,1));%convert m/s
                 v_phi_rel = 1000*polyval(coeffs_v_phi_rel,bound_LT_and_r(1,1));
@@ -156,7 +160,7 @@ end
                     position = k;
                     do_it = true;
 %set for sheath-SW boundary, make the -1 a 1 for msphere sheath boundary
-                elseif boundaries_in_file(7,j) == -1 && ((index_of_crossing - avoid_boundary_offset) - (min([max_windows,windows])-k)*length_of_window-1) >= 0
+                elseif boundaries_in_file(7,j) == 1 && ((index_of_crossing - avoid_boundary_offset) - (min([max_windows,windows])-k)*length_of_window-1) >= 0
                     mag_data_to_analyze = magnetometer_data(:, (index_of_crossing - avoid_boundary_offset) -...
                         (min([max_windows,windows])-k+1)*length_of_window:(index_of_crossing - avoid_boundary_offset) -...
                         (min([max_windows,windows])-k)*length_of_window-1);
@@ -345,10 +349,10 @@ end
 
 %allmodel_15mins_sheath = data;
 %momentmodel_15mins_sheath = data;
-%allmodel_10mins_sheath = data;
-%save('allmodel_10mins_sheath','allmodel_10mins_sheath');
-allmodel_10mins_shock = data;
-save('allmodel_10mins_shock','allmodel_10mins_shock')
+allmodel_10mins_sheath = data;
+save('allmodel_10mins_sheath','allmodel_10mins_sheath');
+%allmodel_10mins_shock = data;
+%save('allmodel_10mins_shock','allmodel_10mins_shock')
 %allmodel_10mins_sheath = load('all_model_10mins_sheath')
 
 %momentmodel_10mins_sheath = data;
