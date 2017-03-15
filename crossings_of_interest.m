@@ -13,7 +13,7 @@ sheath_to_mag(8,:) = 24*60*(datenum(sheath_to_mag(1,:),sheath_to_mag(2,:),sheath
     sheath_to_mag(4,:),sheath_to_mag(5,:),sheath_to_mag(6,:)) - datenum(2004,1,1));
 
 
-if sheath_or_mag
+if sheath_or_mag == 1
     %For magnetosphere%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     MTS_mag_begin = 24*60*(datenum(boundaries(1,where_the_MTS_at-1),boundaries(2,where_the_MTS_at-1),...
         boundaries(3,where_the_MTS_at-1),boundaries(4,where_the_MTS_at-1),...
@@ -30,10 +30,11 @@ if sheath_or_mag
     %ordered_crossings is 2 for MTS
     %"               " is 1 for STM
     c = horzcat(mag_to_sheath,sheath_to_mag);
+    %c = mag_to_sheath;
     %sort by date
     crossings = transpose(sortrows(transpose(c),8));
 
-else
+elseif sheath_or_mag == 2
     %For sheath%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     MTS_next_begin = 24*60*(datenum(boundaries(1,where_the_MTS_at+1),boundaries(2,where_the_MTS_at+1),...
         boundaries(3,where_the_MTS_at+1),boundaries(4,where_the_MTS_at+1),...

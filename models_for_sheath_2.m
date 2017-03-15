@@ -1,19 +1,20 @@
-function [density,temperature,v_r,v_phi] = models_for_sheath_2()  
+function [density,temperature,v_r,v_phi] = models_for_sheath_2()
+    mag_is_1_sheath_is_2 = 2;
+
     data = get_LANL_moments();
     boundaries = get_location_regions_boundary_data();
-    %sheath from magnetopause
-    crossings = crossings_of_interest(boundaries,0);
-    %msphere
-    %crossings = crossings_of_interest(boundaries,1);
+    crossings = crossings_of_interest(boundaries,mag_is_1_sheath_is_2);
+
     %sheath from shock
     %crossings = crossings_of_interest_2(boundaries);
     %crossings = horzcat(crossings1,crossings2);
+
     resolution_in_minutes = 30;
     slices = (24*60)/resolution_in_minutes;
     k = 60/resolution_in_minutes;
-    save_data = false;
     h = 0;
 
+    save_data = false;
     if save_data
         moment_times_path_Name_w = '/home/computation/Documents/GitProjects/';
         moment_times_file_Name_w = 'sheath_500mins.txt';     
@@ -33,25 +34,30 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
     cbcLT2 = zeros(y,1);
     cbcR = zeros(y,1);
     cbc = zeros(y,1);
+
     for i = 1:y
-        %1 for msphere, 2 for sheath
-        if crossings(7,i) == 2
-            ze_condition = ~isnan(data(8,:)) & dates >= crossings(8,i) &...
-            dates <= crossings(8,i) + crossings(9,i)/2 & abs(data(27,:)) < 30 & ~data(29,:) &...
-            ~data(30,:) & ((data(28,:) < 12 & data(37,:)) | (data(28,:) >= 12 & ~data(37,:))) & dates - crossings(8,i) <= 500;
+        %can keep it this way even if you choose crossings_of_interest2
+        if mag_is_1_sheath_is_2 == 2
+            if crossings(7,i) == 2
+                ze_condition = ~isnan(data(8,:)) & dates >= crossings(8,i) &...
+                dates <= crossings(8,i) + crossings(9,i)/2 & abs(data(27,:)) < 30 & ~data(29,:) &...
+                ~data(30,:) & ((data(28,:) < 12 & data(37,:)) | (data(28,:) >= 12 & ~data(37,:))) & dates - crossings(8,i) <= 500;
 
-            ze_condition2 = ~isnan(data(8,:)) & dates >= crossings(8,i) &...
-            dates <= crossings(8,i) + crossings(9,i)/2 & abs(data(27,:)) < 30 & ~data(29,:) &...
-            ~data(30,:) & dates - crossings(8,i) <= 500;
+                %corotation viewing flag comparison
+                ze_condition2 = ~isnan(data(8,:)) & dates >= crossings(8,i) &...
+                dates <= crossings(8,i) + crossings(9,i)/2 & abs(data(27,:)) < 30 & ~data(29,:) &...
+                ~data(30,:) & dates - crossings(8,i) <= 500;
+            else
+                ze_condition = ~isnan(data(8,:)) & dates <= crossings(8,i) &...
+                dates >= crossings(8,i) - crossings(9,i)/2 & abs(data(27,:)) < 30 & ~data(29,:) &...
+                ~data(30,:) & ((data(28,:) < 12 & data(37,:)) | (data(28,:) >= 12 & ~data(37,:))) & crossings(8,i) - dates <= 500;
+
+                ze_condition2 = ~isnan(data(8,:)) & dates <= crossings(8,i) &...
+                dates >= crossings(8,i) - crossings(9,i)/2 & abs(data(27,:)) < 30 & ~data(29,:) &...
+                ~data(30,:) & crossings(8,i) - dates <= 500;
+            end
         else
-            ze_condition = ~isnan(data(8,:)) & dates <= crossings(8,i) &...
-            dates >= crossings(8,i) - crossings(9,i)/2 & abs(data(27,:)) < 30 & ~data(29,:) &...
-            ~data(30,:) & ((data(28,:) < 12 & data(37,:)) | (data(28,:) >= 12 & ~data(37,:))) & crossings(8,i) - dates <= 500;
-
-            ze_condition2 = ~isnan(data(8,:)) & dates <= crossings(8,i) &...
-            dates >= crossings(8,i) - crossings(9,i)/2 & abs(data(27,:)) < 30 & ~data(29,:) &...
-            ~data(30,:) & crossings(8,i) - dates <= 500;
-
+            %magnetosphere averaging not implemented!
         end
 
         densities = data(7,ze_condition & data(7,:) > 0);
@@ -64,14 +70,13 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
         LT2 = data(28, ze_condition & data(10,:) ~= -999);
         R = data(26, ze_condition & data(10,:) ~= -999);
 
-        these_dates = data(2:6,ze_condition & data(9,:) ~= -999);
-
         %avoid repeat data
         data(7,ze_condition) = 0;
         data(8,ze_condition) = -999;
         data(9,ze_condition) = -999;
         data(10,ze_condition) = -999;
 
+        %calculates an average for each boundary
         if ~isempty(v_phi_rel)
             cbc(i) = nanmean(v_phi_rel2);
             cbcLT2(i) = nanmean(LT2);
@@ -85,6 +90,7 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
         end
   
         if save_data
+            these_dates = data(2:6,ze_condition & data(9,:) ~= -999);
             pre_and_post_noon = these_dates(:,LT > 10 & LT < 14);
             pre_and_post_noon_times = LT(LT > 10 & LT < 14);
             h = h  + length(pre_and_post_noon_times);
@@ -111,7 +117,7 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
     %all_vr_LT = all_vr_LT((flag_view == 105 | flag_view == 101));
     %all_v_phi = all_v_phi((flag_view == 105 | flag_view == 101));
     %all_vphi_LT = all_vphi_LT((flag_view == 105 | flag_view == 101));
-
+      
     avg_model_data_T = nan(slices,1);
     avg_model_data_density = nan(slices,1);
     avg_model_data_v_r = nan(slices,1);
@@ -180,20 +186,21 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
     d2 = avg_model_data_v_phi(v_phi_first+4:22);
     d22 = avg_model_data_v_phi2(v_phi_first2+4:22);
 
-    %figure
-    %h1 =scatter(1:14,d2,'b')
-    %set(h1, 'SizeData', 100)
-    %hold on
-    %h2 = scatter(1:14,d22,'r*')
-    %set(h2, 'SizeData', 100)
-    %xlabel('Local Time','Interpreter','latex')
-    %ylabel('km/s','Interpreter','latex')
-    %legend('anticorotation assumption','viewing ignored')
+%LOTS OF PLOTS
+%---------------------------------------------------------------------------
+ %   figure
+ %   h1 =scatter(1:14,d2,'b')
+ %   set(h1, 'SizeData', 100)
+ %   hold on
+ %   h2 = scatter(1:14,d22,'r*')
+ %   set(h2, 'SizeData', 100)
+ %   xlabel('Local Time','Interpreter','latex')
+ %   ylabel('km/s','Interpreter','latex')
+ %   legend('anticorotation assumption','viewing ignored')
 
     d3 = avg_model_data_v_phi(26:v_phi_last);
-
     figure
-    bar([slices/4,3*slices/4],[mean(d2),mean(d3)])
+    bar([slices/4+2,3*slices/4-2],[mean(d2),mean(d3)],0.8)
     hold on
     h = boxplot([d2,d3],'positions',[15,33],'Whisker',0,'Colors','k');
     set(h,{'linew'},{1.5});
@@ -205,26 +212,25 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
     %plot(v_phi_first:v_phi_last,smooth_vphi)
     %scatter(v_phi_first:v_phi_last,avg_model_data_v_phi(v_phi_first:v_phi_last),[],vr_fluct(v_phi_first:v_phi_last),'.','SizeData',500)
     scatter(v_phi_first+4:v_phi_last,avg_model_data_v_phi(v_phi_first+4:v_phi_last),'.','SizeData',500)
+    a = plot(v_phi_first+4:23,-avg_model_data_v_phi(v_phi_first+4:23),'r--')
+    b = plot(48 - v_phi_last:23,flipud(avg_model_data_v_phi(25:v_phi_last)),'g--')
     ylabel('km/s')
     xlabel('Local Time')
     %h = colorbar;
     %ylabel(h,'v_r fluctuation')
     ax = gca;
-    ax.XTick = [0 10 20 30 40 50];
-    ax.XTickLabel = {'0','5:00','10:00','15:00','20:00','-'};
-    saveas(gcf,'\home\computation\Pictures\total_vphi_scatter_flags','jpg');
-    x1 = linspace(v_phi_first,v_phi_last);
-    y2 = polyval(p4,x1);
-    plot(x1,y2)
-    y2 = polyval(p44,x1);
-    plot(x1,y2,'g')
-
+    ax.XTick = [0 6 12 18 24 30 36 42];
+    ax.XTickLabel = {'0',' ','6:00',' ','12:00',' ','18:00',' '};
+    %x1 = linspace(v_phi_first,v_phi_last);
+    %y2 = polyval(p4,x1);
+    %plot(x1,y2)
+    %y2 = polyval(p44,x1);
+    %plot(x1,y2,'g')
    
     %rgb_colors = parula(100);
     %r = rgb_colors(:,1);
     %g = rgb_colors(:,2);
     %b = rgb_colors(:,3);
-
 
     %bb2 = bar(15,nanmean(d2),14);
     %alpha(bb2,0.1);
@@ -300,6 +306,7 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
     %line([slices/2 slices/2],[-40,100],'Color','r')
     %title('Mass flux v_{phi}*rho')
     %line([0 40],[0,0],'Color','r')
+%--------------------------------------------------------------------------
 
     temperature = p1;
     density = p22;
