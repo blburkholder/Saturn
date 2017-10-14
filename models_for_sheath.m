@@ -35,8 +35,9 @@ function [density,temperature,v_r,v_phi_dawn] = models_for_sheath()
     [x,y] = size(crossings); 
     crossing_by_crossing_average = zeros(y,20,6);
     cbcLT = zeros(y,20);
+    mag = zeros(y,20);
     entropy = nan(y,2000,4);
-    dynpress_vs_plaspress = nan(y,2);
+    %dynpress_vs_plaspress = nan(y,2);
 
     %for mag data, always opens 2 files at a time so that we can never get caught between
     %files. This also makes it super super slow
@@ -46,52 +47,52 @@ function [density,temperature,v_r,v_phi_dawn] = models_for_sheath()
     %magnetometer_data_nextfile = get_magnetometer_data(file+1);
     %magnetometer_data = horzcat(magnetometer_data_first,magnetometer_data_nextfile);
     %mag_dates = 24*60*(datenum(magnetometer_data(1,:)...
-    %    , magnetometer_data(2,:), magnetometer_data(3,:)...
-    %    , magnetometer_data(4,:), magnetometer_data(5,:)...
-    %    , floor(magnetometer_data(6,:))) - datenum(2004,1,1));
+        %, magnetometer_data(2,:), magnetometer_data(3,:)...
+        %, magnetometer_data(4,:), magnetometer_data(5,:)...
+        %, floor(magnetometer_data(6,:))) - datenum(2004,1,1));
 
     %are data evenly distributed in space and time?
-    local_time = zeros(24,1);
-    time_from = zeros(10,1);
+    %local_time = zeros(24,1);
+    %time_from = zeros(10,1);
 
     for i = 1:y
     %this block of code and one above it and mag condition below would give you
     %the magnetometer data for each boundary crossing. The length of the time
     %series starts at the boundary and goes halfway to the next boundary.
-
-        %while  (crossings(7,i) == mag_is_2_sheath_is_1 && crossings(8,i) + crossings(9,i)/2 >...
-        %    mag_dates(end)) || (crossings(7,i) ~= mag_is_2_sheath_is_1 && crossings(8,i) -...
-        %    crossings(9,i)/2 < mag_dates(i))
-        %    if crossings(7,i) == 1
-        %        file = file + 1;
-        %    else
-        %        file = file - 1;
-        %    end
-        %    magnetometer_data_first = get_magnetometer_data(file);
-        %    magnetometer_data_nextfile = get_magnetometer_data(file+1);
-        %    magnetometer_data = vertcat(magnetometer_data_first,magnetometer_data_nextfile);
-        %    mag_dates = 24*60*(datenum(magnetometer_data(1,:)...
-        %        , magnetometer_data(2,:), magnetometer_data(3,:)...
-        %        , magnetometer_data(4,:), magnetometer_data(5,:)...
-        %        , floor(magnetometer_data(6,:))) - datenum(2004,1,1));
-        %end
-
+%{
+        while  (crossings(7,i) == mag_is_1_sheath_is_2 && crossings(8,i) + crossings(9,i)/2 >...
+            mag_dates(end)) || (crossings(7,i) ~= mag_is_1_sheath_is_2 && crossings(8,i) -...
+            crossings(9,i)/2 < mag_dates(i))
+            if crossings(7,i) == 2
+                file = file + 1;
+            else
+                file = file - 1;
+            end
+            magnetometer_data_first = get_magnetometer_data(file);
+            magnetometer_data_nextfile = get_magnetometer_data(file+1);
+            magnetometer_data = horzcat(magnetometer_data_first,magnetometer_data_nextfile);
+            mag_dates = 24*60*(datenum(magnetometer_data(1,:)...
+                , magnetometer_data(2,:), magnetometer_data(3,:)...
+                , magnetometer_data(4,:), magnetometer_data(5,:)...
+                , floor(magnetometer_data(6,:))) - datenum(2004,1,1));
+        end
+%}
     %this is the meat of the code where we use the flags and the type of
     %boundary we are at to pick out valid moments. TFC is time from
     %crossing
         if mag_is_1_sheath_is_2 == 1
             if crossings(7,i) == mag_is_1_sheath_is_2
                 %mag_condition = mag_dates >= crossings(8,i) & mag_dates <= crossings(8,i) + crossings(9,i)/2;
-                ze_condition = ~isnan(data(8,:)) & dates >= crossings(8,i) & dates <= crossings(8,i)...
-                    + crossings(9,i)/2 & abs(data(27,:)) < 30 & ~data(29,:) & ~data(30,:) & data(7,:) > 0 &...
-                    data(10,:) ~= -999 & data(9,:) ~= -999 & data(8,:) ~= -999 & ~data(37,:);
+                ze_condition = ~isnan(data(8,:)) & dates <= crossings(8,i) & dates >= crossings(8,i)...
+                    - crossings(9,i)/2 & abs(data(27,:)) < 30 & ~data(29,:) & ~data(30,:) & data(7,:) > 0 &...
+                    data(10,:) ~= -999 & data(9,:) ~= -999 & data(8,:) ~= -999;
                 TFC = dates(ze_condition) - crossings(8,i);
                 %mag_TFC = mag_dates(mag_condition) - crossings(8,i);
            else
-                %mag_condition = mag_dates <= crossings(8,i) & mag_dates >= crossings(8,i) - crossings(9,i)/2;
-                ze_condition = ~isnan(data(8,:)) & dates <= crossings(8,i) & dates >= crossings(8,i)...
-                    - crossings(9,i)/2 & abs(data(27,:)) < 30 & ~data(29,:) & ~data(30,:) & data(7,:) > 0 &...
-                    data(10,:) ~= -999 & data(9,:) ~= -999 & data(8,:) ~= -999 & ~data(37,:);
+               %mag_condition = mag_dates <= crossings(8,i) & mag_dates >= crossings(8,i) - crossings(9,i)/2;
+                ze_condition = ~isnan(data(8,:)) & dates >= crossings(8,i) & dates <= crossings(8,i)...
+                    + crossings(9,i)/2 & abs(data(27,:)) < 30 & ~data(29,:) & ~data(30,:) & data(7,:) > 0 &...
+                    data(10,:) ~= -999 & data(9,:) ~= -999 & data(8,:) ~= -999;
                 TFC = crossings(8,i) - dates(ze_condition);
                 %mag_TFC = crossings(8,i) - mag_dates(mag_condition);
             end
@@ -116,7 +117,7 @@ function [density,temperature,v_r,v_phi_dawn] = models_for_sheath()
          end
 
         if sum(ze_condition) > 1
-            %mag_points = 10^(-9)*magnetometer_data(mag(1),mag(end));
+            %mag_points = 10^(-9)*magnetometer_data(:,mag_condition);
             densities = data(7,ze_condition);
             temps = data(8,ze_condition);
             entropy(i,1:length(densities),1) = densities.^(-2/3).*temps;
@@ -130,12 +131,12 @@ function [density,temperature,v_r,v_phi_dawn] = models_for_sheath()
             v_phi_rel = data(10,ze_condition);
             vphi_LT = data(28, ze_condition);
 
-            for q = 1:24
-              local_time(q) = local_time(q) + sum(floor(vphi_LT) == q & TFC <= 500);
-            end
-            for q = 1:10
-              time_from(q) = time_from(q) + sum(floor(TFC) >= 50*(q-1) & floor(TFC) < 50*q);
-            end
+            %for q = 1:24
+            %  local_time(q) = local_time(q) + sum(floor(vphi_LT) == q & TFC <= 500);
+            %end
+            %for q = 1:10
+            %  time_from(q) = time_from(q) + sum(floor(TFC) >= 50*(q-1) & floor(TFC) < 50*q);
+            %end
 
             %dynpress_vs_plaspress(i,1) = (1.67e-27)*mean(densities*(1e6))*mean((v_phi_rel*1000).^2);
             %dynpress_vs_plaspress(i,2) = mean(densities*(1e6))*(1.602e-19)*mean(temps);
@@ -155,6 +156,8 @@ function [density,temperature,v_r,v_phi_dawn] = models_for_sheath()
                 crossing_by_crossing_average(i,g,5) =  mean(temps(TFC >= (g-1)*50 & TFC < g*50));
                 %crossing_by_crossing_average(i,g,6) =  nanmean(mag_points(mag_TFC >= (g-1)*50 & mag_TFC < g*50).^2);
                 cbcLT(i,g) = mean(vphi_LT(TFC >= (g-1)*50 & TFC < g*50));
+                %using r as normal to boundary
+                %mag(i,g) = mean(mag_points(7,mag_TFC >= (g-1)*50 & mag_TFC < g*50));
             end
         end
 
@@ -172,11 +175,11 @@ function [density,temperature,v_r,v_phi_dawn] = models_for_sheath()
         end
     end
 
-figure
-plot(local_time)
+%figure
+%plot(local_time)
 
-figure
-plot(time_from)
+%figure
+%plot(time_from)
 
 %Wanna know about pressure?
 %-------------------------------------------------------------------
@@ -187,7 +190,7 @@ plot(time_from)
 
 %Wanna know about entropy?
 %------------------------------------------------------------------
-
+%{
     entro = reshape(entropy(:,:,1),[2000*y,1]);
     R = reshape(entropy(:,:,2),[2000*y,1]);
     LT = reshape(entropy(:,:,3),[2000*y,1]);
@@ -274,9 +277,10 @@ avg_model_data_T_t = zeros(slices,time_bins);
 avg_model_data_density_t = zeros(slices,time_bins);
 avg_model_data_v_r_t = zeros(slices,time_bins);
 vr_fluct = zeros(slices,time_bins);
+avg_model_data_B_r_t = zeros(slices,time_bins);
 
 %above we collected data from each boundary which fulfilled the flag
-%requiremnets, here we average the data with respect to local time and time
+%requirements, here we average the data with respect to local time and time
 %from boundary
 for t = 1:time_bins
     here_vphi = crossing_by_crossing_average(:,t,1);
@@ -285,6 +289,7 @@ for t = 1:time_bins
     here_density = crossing_by_crossing_average(:,t,4);
     here_temp = crossing_by_crossing_average(:,t,5);
     here_LT = cbcLT(:,t);
+    here_mag = mag(:,t);
     for i = 1:slices         
         LT_condition = floor(k*here_LT) == i;
 
@@ -292,10 +297,14 @@ for t = 1:time_bins
         avg_model_data_T_t(i,t) = nanmean(here_temp(LT_condition));
         avg_model_data_v_r_t(i,t) = nanmean(here_vr(LT_condition));
         avg_model_data_v_phi_t(i,t) = nanmean(here_vphi(LT_condition));
+        avg_model_data_B_r_t(i,t) = nanmean(here_mag(LT_condition));
         vr_fluct(i,t) = mean(here_vr_fluct(LT_condition));
 
         if isnan(avg_model_data_v_phi_t(i,t))
             avg_model_data_v_phi_t(i,t) = 0;
+        end
+        if isnan(avg_model_data_B_r_t(i,t))
+            avg_model_data_B_r_t(i,t) = 0;
         end
     end
 end
@@ -306,28 +315,33 @@ dusk1 = k*13;
 dusk2 = k*17;
 means_time2 = zeros(time_bins,dawn2-dawn1+1,2);
 means_time3 = zeros(time_bins,2);
-%means_time4 = zeros(time_bins,4);
+means_time4 = zeros(time_bins,2);
 
 %making a plot for successive 50 minute time intervals beginning at
 %magnetopause boundary
 for i = 1:time_bins
-    density_this_slice = avg_model_data_density_t(:,i);
-    density_first = find(~isnan(density_this_slice),1,'first');
-    density_last = find(~isnan(density_this_slice),1,'last');
+    %density_this_slice = avg_model_data_density_t(:,i);
+    %density_first = find(~isnan(density_this_slice),1,'first');
+    %density_last = find(~isnan(density_this_slice),1,'last');
 
-    temp_this_slice = avg_model_data_T_t(:,i);
-    temp_first = find(~isnan(temp_this_slice),1,'first');
-    temp_last = find(~isnan(temp_this_slice),1,'last');
+    %temp_this_slice = avg_model_data_T_t(:,i);
+    %temp_first = find(~isnan(temp_this_slice),1,'first');
+    %temp_last = find(~isnan(temp_this_slice),1,'last');
 
-    vr_this_slice = avg_model_data_v_r_t(:,i);
-    v_r_first = find(~isnan(vr_this_slice),1,'first');
-    v_r_last = find(~isnan(vr_this_slice),1,'last');
-    vr_fluct_this_slice = vr_fluct(:,i);
+    %vr_this_slice = avg_model_data_v_r_t(:,i);
+    %v_r_first = find(~isnan(vr_this_slice),1,'first');
+    %v_r_last = find(~isnan(vr_this_slice),1,'last');
+    %vr_fluct_this_slice = vr_fluct(:,i);
 
     vphi_this_slice = avg_model_data_v_phi_t(:,i);
     vphi_this_slice(vphi_this_slice == 0) = NaN;
     v_phi_first = find(~isnan(vphi_this_slice),1,'first');
     v_phi_last = find(~isnan(vphi_this_slice),1,'last');
+
+    Br_this_slice = avg_model_data_B_r_t(:,i);
+    Br_this_slice(Br_this_slice == 0) = NaN;
+    B_r_first = find(~isnan(Br_this_slice),1,'first');
+    B_r_last = find(~isnan(Br_this_slice),1,'last');
 %{
     if sum(~isnan(density_this_slice)) > 1
         interp_density = interp1(find(~isnan(density_this_slice)),density_this_slice(~isnan(density_this_slice)),density_first:density_last);
@@ -426,17 +440,24 @@ for i = 1:time_bins
         means_time2(i,:,2) = vphi_this_slice(dusk1:dusk2);
         means_time3(i,1) = nanmean(vphi_this_slice(dawn1:dawn2));
         means_time3(i,2) = nanmean(vphi_this_slice(dusk1:dusk2));
+        means_time4(i,1) = nanmean(Br_this_slice(dawn1:dawn2));
+        means_time4(i,2) = nanmean(Br_this_slice(dusk1:dusk2));
 end
     
-
-    %rgb_colors = parula(100);
-    %r = rgb_colors(:,1);
-    %g = rgb_colors(:,2);
-    %b = rgb_colors(:,3);
-  
+    %normal component of magnetic field
+%{
+    figure
+    scatter(1:time_bins,means_time4(:,1),'.r');
+    hold on
+    scatter(1:time_bins,means_time4(:,2),'.b');
+    plot(1:time_bins,means_time4(:,1),'--r');
+    plot(1:time_bins,means_time4(:,2),'--b');
+%}
+    %vphi velocity
     bp1 = means_time2(:,:,1);
     bp2 = means_time2(:,:,2);
     figure
+    axis([0 11 -50 300])
     h1 = boxplot(bp1','Whisker',0,'Colors','r');
     ylim manual
     hold on
@@ -468,7 +489,6 @@ end
     xlabel('Spacecraft time from bow shock crossing (minutes)','Interpreter','latex')
     ylabel('average $V_{\phi}$ km/s','Interpreter','latex')
     line([0 slices],[0,0],'Color','k')
-    axis([0 11 -300 300])
     set(gca,'XTickMode','manual');
     set(gca,'XTick',0:4:10);
     set(gca,'XtickLabels',0:200:50*time_bins);

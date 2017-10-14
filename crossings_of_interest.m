@@ -12,7 +12,6 @@ mag_to_sheath(8,:) = 24*60*(datenum(mag_to_sheath(1,:),mag_to_sheath(2,:),mag_to
 sheath_to_mag(8,:) = 24*60*(datenum(sheath_to_mag(1,:),sheath_to_mag(2,:),sheath_to_mag(3,:),...
     sheath_to_mag(4,:),sheath_to_mag(5,:),sheath_to_mag(6,:)) - datenum(2004,1,1));
 
-
 if sheath_or_mag == 1
     %For magnetosphere%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     MTS_mag_begin = 24*60*(datenum(boundaries(1,where_the_MTS_at-1),boundaries(2,where_the_MTS_at-1),...

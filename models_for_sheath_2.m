@@ -1,13 +1,13 @@
 function [density,temperature,v_r,v_phi] = models_for_sheath_2()
-    mag_is_1_sheath_is_2 = 2;
+    mag_is_1_sheath_is_2 = 1;
 
     data = get_LANL_moments();
     boundaries = get_location_regions_boundary_data();
+    %sheath from magnetopause
     crossings = crossings_of_interest(boundaries,mag_is_1_sheath_is_2);
 
     %sheath from shock
     %crossings = crossings_of_interest_2(boundaries);
-    %crossings = horzcat(crossings1,crossings2);
 
     resolution_in_minutes = 30;
     slices = (24*60)/resolution_in_minutes;
@@ -31,9 +31,9 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
     [x,y] = size(crossings);
     crossing_by_crossing_average = zeros(y,5);
     cbcLT = zeros(y,1);
-    cbcLT2 = zeros(y,1);
+    %cbcLT2 = zeros(y,1);
     cbcR = zeros(y,1);
-    cbc = zeros(y,1);
+    %cbc = zeros(y,1);
 
     for i = 1:y
         %can keep it this way even if you choose crossings_of_interest2
@@ -44,20 +44,28 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
                 ~data(30,:) & ((data(28,:) < 12 & data(37,:)) | (data(28,:) >= 12 & ~data(37,:))) & dates - crossings(8,i) <= 500;
 
                 %corotation viewing flag comparison
-                ze_condition2 = ~isnan(data(8,:)) & dates >= crossings(8,i) &...
-                dates <= crossings(8,i) + crossings(9,i)/2 & abs(data(27,:)) < 30 & ~data(29,:) &...
-                ~data(30,:) & dates - crossings(8,i) <= 500;
+                %ze_condition2 = ~isnan(data(8,:)) & dates >= crossings(8,i) &...
+                %dates <= crossings(8,i) + crossings(9,i)/2 & abs(data(27,:)) < 30 & ~data(29,:) &...
+                %~data(30,:) & dates - crossings(8,i) <= 500;
             else
                 ze_condition = ~isnan(data(8,:)) & dates <= crossings(8,i) &...
                 dates >= crossings(8,i) - crossings(9,i)/2 & abs(data(27,:)) < 30 & ~data(29,:) &...
                 ~data(30,:) & ((data(28,:) < 12 & data(37,:)) | (data(28,:) >= 12 & ~data(37,:))) & crossings(8,i) - dates <= 500;
 
-                ze_condition2 = ~isnan(data(8,:)) & dates <= crossings(8,i) &...
-                dates >= crossings(8,i) - crossings(9,i)/2 & abs(data(27,:)) < 30 & ~data(29,:) &...
-                ~data(30,:) & crossings(8,i) - dates <= 500;
+                %ze_condition2 = ~isnan(data(8,:)) & dates <= crossings(8,i) &...
+                %dates >= crossings(8,i) - crossings(9,i)/2 & abs(data(27,:)) < 30 & ~data(29,:) &...
+                %~data(30,:) & crossings(8,i) - dates <= 500;
             end
         else
-            %magnetosphere averaging not implemented!
+            if crossings(7,i) == 1
+                ze_condition = ~isnan(data(8,:)) & dates <= crossings(8,i) &...
+                dates >= crossings(8,i) - crossings(9,i)/2 & abs(data(27,:)) < 30 & ~data(29,:) &...
+                ~data(30,:) & ~data(37,:) & dates - crossings(8,i) <= 500;
+            else
+                ze_condition = ~isnan(data(8,:)) & dates >= crossings(8,i) &...
+                dates <= crossings(8,i) + crossings(9,i)/2 & abs(data(27,:)) < 30 & ~data(29,:) &...
+                ~data(30,:) & ~data(37,:) & crossings(8,i) - dates <= 500;
+            end
         end
 
         densities = data(7,ze_condition & data(7,:) > 0);
@@ -65,9 +73,9 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
         v_r_rel = data(9,ze_condition & data(9,:) ~= -999);
         v_r_fluct = sqrt((v_r_rel - mean(v_r_rel)).^2);
         v_phi_rel = data(10,ze_condition & data(10,:) ~= -999);
-        v_phi_rel2 = data(10,ze_condition2 & data(10,:) ~= -999);
+        %v_phi_rel2 = data(10,ze_condition2 & data(10,:) ~= -999);
         LT = data(28, ze_condition & data(10,:) ~= -999);
-        LT2 = data(28, ze_condition & data(10,:) ~= -999);
+        %LT2 = data(28, ze_condition & data(10,:) ~= -999);
         R = data(26, ze_condition & data(10,:) ~= -999);
 
         %avoid repeat data
@@ -78,8 +86,8 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
 
         %calculates an average for each boundary
         if ~isempty(v_phi_rel)
-            cbc(i) = nanmean(v_phi_rel2);
-            cbcLT2(i) = nanmean(LT2);
+            %cbc(i) = nanmean(v_phi_rel2);
+            %cbcLT2(i) = nanmean(LT2);
             crossing_by_crossing_average(i,1) = nanmean(v_phi_rel);
             crossing_by_crossing_average(i,2) = nanmean(v_r_rel);
             crossing_by_crossing_average(i,3) = nanmean(v_r_fluct);
@@ -122,7 +130,7 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
     avg_model_data_density = nan(slices,1);
     avg_model_data_v_r = nan(slices,1);
     avg_model_data_v_phi = nan(slices,1);
-    avg_model_data_v_phi2 = nan(slices,1);
+    %avg_model_data_v_phi2 = nan(slices,1);
     vr_fluct = zeros(slices,1);
 
     for i = 1:slices
@@ -130,7 +138,7 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
         avg_model_data_T(i) =  mean(crossing_by_crossing_average(floor(k*cbcLT) == i & crossing_by_crossing_average(:,5),5));
         avg_model_data_v_r(i) =  mean(crossing_by_crossing_average(floor(k*cbcLT) == i & crossing_by_crossing_average(:,2),2));
         avg_model_data_v_phi(i) = mean(crossing_by_crossing_average(floor(k*cbcLT) == i & crossing_by_crossing_average(:,1),1));
-        avg_model_data_v_phi2(i) = mean(cbc(floor(k*cbcLT2) == i & cbc));
+        %avg_model_data_v_phi2(i) = mean(cbc(floor(k*cbcLT2) == i & cbc));
         vr_fluct(i) = mean(crossing_by_crossing_average(floor(k*cbcLT) == i,3));
     end
 
@@ -148,7 +156,6 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
 %        vr_fluct(i) = mean(crossing_by_crossing_average(floor(k*cbcR) == i,3));
 %    end
 
-
     density_first = find(~isnan(avg_model_data_density),1,'first');
     density_last = find(~isnan(avg_model_data_density),1,'last');
     temp_first = find(~isnan(avg_model_data_T),1,'first');
@@ -157,8 +164,8 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
     v_r_last = find(~isnan(avg_model_data_v_r),1,'last');
     v_phi_first = find(~isnan(avg_model_data_v_phi),1,'first');
     v_phi_last = find(~isnan(avg_model_data_v_phi),1,'last');
-    v_phi_first2 = find(~isnan(avg_model_data_v_phi2),1,'first');
-    v_phi_last2 = find(~isnan(avg_model_data_v_phi2),1,'last');
+    %v_phi_first2 = find(~isnan(avg_model_data_v_phi2),1,'first');
+    %v_phi_last2 = find(~isnan(avg_model_data_v_phi2),1,'last');
 
     interp_density = interp1(find(~isnan(avg_model_data_density)),avg_model_data_density(~isnan(avg_model_data_density)),density_first:density_last);
     interp_temp = interp1(find(~isnan(avg_model_data_T)),avg_model_data_T(~isnan(avg_model_data_T)),temp_first:temp_last);
@@ -182,9 +189,10 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
     p4 = polyfit(v_phi_first:v_phi_last,smooth_vphi,3);
     p44 = polyfit([7 8 9 10 24 38 39 40 41],[-200 -200 -200 -200 0 200 200 200 200],3);
 
+avg_model_data_v_phi(v_phi_first:v_phi_last) = interp_vphi;
 
-    d2 = avg_model_data_v_phi(v_phi_first+4:22);
-    d22 = avg_model_data_v_phi2(v_phi_first2+4:22);
+    d2 = avg_model_data_v_phi(v_phi_first:22);
+    %d22 = avg_model_data_v_phi2(v_phi_first2+4:22);
 
 %LOTS OF PLOTS
 %---------------------------------------------------------------------------
@@ -202,18 +210,20 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
     figure
     bar([slices/4+2,3*slices/4-2],[mean(d2),mean(d3)],0.8)
     hold on
-    h = boxplot([d2,d3],'positions',[15,33],'Whisker',0,'Colors','k');
-    set(h,{'linew'},{1.5});
-    set(h(7,:),'Visible','off');
+    %h = boxplot([d2(al+1:end),d3],'positions',[15,33],'Whisker',0,'Colors','k');
+    %set(h,{'linew'},{1.5});
+    %set(h(7,:),'Visible','off');
     xlim auto
     title('v_{\phi}');
     line([slices/2 slices/2],[-300,300],'Color','k');
     line([0 slices],[0,0],'Color','k');
     %plot(v_phi_first:v_phi_last,smooth_vphi)
     %scatter(v_phi_first:v_phi_last,avg_model_data_v_phi(v_phi_first:v_phi_last),[],vr_fluct(v_phi_first:v_phi_last),'.','SizeData',500)
-    scatter(v_phi_first+4:v_phi_last,avg_model_data_v_phi(v_phi_first+4:v_phi_last),'.','SizeData',500)
-    a = plot(v_phi_first+4:23,-avg_model_data_v_phi(v_phi_first+4:23),'r--')
-    b = plot(48 - v_phi_last:23,flipud(avg_model_data_v_phi(25:v_phi_last)),'g--')
+    scatter(v_phi_first:v_phi_last,avg_model_data_v_phi(v_phi_first:v_phi_last),'.','SizeData',500)
+    %a = plot(v_phi_first:23,-avg_model_data_v_phi(v_phi_first:23),'r--');
+    %b = plot(48 - v_phi_last:23,flipud(avg_model_data_v_phi(25:v_phi_last)),'b--');
+    c = plot(v_phi_first:23,avg_model_data_v_phi(v_phi_first:23),'r--');
+    d = plot(25:v_phi_last,avg_model_data_v_phi(25:v_phi_last),'b--');
     ylabel('km/s')
     xlabel('Local Time')
     %h = colorbar;
@@ -238,7 +248,7 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
     %bb3 = bar(33,nanmean(d3),14);
     %alpha(bb3,0.1);
     %set(bb3(1),'facecolor',[r(ceil(nanmean(vr_fluct(26:v_phi_last))/maximum*100)) g(ceil(nanmean(vr_fluct(26:v_phi_last))/maximum*100)) b(ceil(nanmean(vr_fluct(26:v_phi_last))/maximum*100))]); 
-
+%{
     figure
     %plot(v_r_first:v_r_last,smooth_vr)
     scatter(v_r_first:v_r_last,avg_model_data_v_r(v_r_first:v_r_last),'.','SizeData',500)
@@ -300,7 +310,7 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
     ax.XTick = [0 10 20 30 40 50];
     ax.XTickLabel = {'0','5:00','10:00','15:00','20:00','-'};
     hold off
-
+%}
     %figure
     %plot(interp_density.*interp_vphi);
     %line([slices/2 slices/2],[-40,100],'Color','r')
