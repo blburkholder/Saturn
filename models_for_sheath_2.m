@@ -1,5 +1,5 @@
 function [density,temperature,v_r,v_phi] = models_for_sheath_2()
-    mag_is_1_sheath_is_2 = 1;
+    mag_is_1_sheath_is_2 = 2;
 
     data = get_LANL_moments();
     boundaries = get_location_regions_boundary_data();
@@ -109,6 +109,18 @@ function [density,temperature,v_r,v_phi] = models_for_sheath_2()
             end
         end
     end
+
+cbc_dynpress = zeros(y,1);
+for g = 1:y
+    cbc_dynpress(g) = get_dynamic_pressure(cbcR(g),pi*cbcLT(g)/12 - pi);
+end
+
+figure
+scatter(cbcLT(cbc_dynpress < 0.01),crossing_by_crossing_average(cbc_dynpress < 0.01,1),'r.')
+hold on
+scatter(cbcLT(cbc_dynpress >= 0.01 & cbc_dynpress < 0.05),crossing_by_crossing_average(cbc_dynpress >= 0.01 & cbc_dynpress < 0.05 ,1),'g.')
+scatter(cbcLT(cbc_dynpress >= 0.05),crossing_by_crossing_average(cbc_dynpress >= 0.05,1),'b.')
+
 
     %flag_view = zeros(1,length(all_v_r(all_vr_LT < 14 & all_vr_LT > 10)));
     %flag_edge_anode = zeros(1,length(all_v_r(all_vr_LT < 14 & all_vr_LT > 10)));
