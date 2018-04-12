@@ -92,5 +92,5 @@ function [f, power_spectrum] = get_power_spectrum_morlet(B_fluctuation_perp, B_t
     power_spectrum_tot = 2/N*power_spectrum_tot;
 %     [power_spectrum_scaling_constant] = get_power_spectrum_scaling_constant(B_total_std, power_spectrum_tot, f);
 %     power_spectrum = power_spectrum_scaling_constant*power_spectrum_tot;
-    power_spectrum = power_spectrum_tot;   
+    power_spectrum = power_spectrum_tot;
 end

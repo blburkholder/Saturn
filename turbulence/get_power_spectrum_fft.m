@@ -95,5 +95,5 @@ function [f, power_spectrum] = get_power_spectrum_fft(B_fluctuation_perp, B_tota
     
     
 %     power_spectrum = power_spectrum_scaling_constant*power_spectrum_tot;
-    power_spectrum = power_spectrum_tot;   
+    power_spectrum = power_spectrum_tot;
 end

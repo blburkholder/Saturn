@@ -7,8 +7,8 @@ format long
 
 number_of_files = 181;
 length_of_window = 3600/6; 
-max_windows = 20;
-mag_is_1_sheath_is_0 = 0;
+max_windows = 10;
+mag_is_1_sheath_is_0 = 1;
 avoid_boundary_offset = 120;
 
 ion_molar_mass = 18.01528e-3; %kg/mol (water)
@@ -46,7 +46,7 @@ q = 0;
 %modeled = 0;
 %moment = 0;
 how_many_boundaries = 0;
-moments = get_LANL_moments();
+%moments = get_LANL_moments();
 
 if ~mag_is_1_sheath_is_0
     [coeffs_density,coeffs_T,coeffs_v_r_rel,coeffs_v_phi_rel] = models_for_sheath_2();
@@ -71,7 +71,7 @@ end
 
     for j = 1:number_of_crossings
         clearvars -except location_data regions_boundary_data mag_data_atalysis_fileID magnetometer_data i length_of_window... 
-            coeffs_density coeffs_T num_of_bad_locations num_of_bad_slopes save_data formatSpec_w boundaries_in_file...
+            coeffs_density coeffs_T num_of_bad_locations num_of_bad_slopes save_data formatSpec_w boundaries_in_file ion_mass...
             crossing_date dates j do_it length_of_magnetometer_data coeffs_v_r_rel coeffs_v_phi_rel avagdro_number... 
             boundaries_inside number_of_crossings position region q data mag_is_1_sheath_is_0 mag_data avoid_boundary_offset...
             how_many_boundaries moments modeled moment start p qs_data nqs_data split ordered_crossings max_windows
@@ -96,7 +96,7 @@ end
                 nqs_data(2,p) = bound_LT_and_r(2,1);
             end
  %}      
- %{       
+        
 %magnetosphere     
         if (windows > 1) && ~isempty(index_of_crossing) 
         %if windows < 5 
@@ -119,12 +119,12 @@ end
                     position = min([max_windows,windows])-k+1;
                     do_it = true;
                 end 
-%}                     
-        %magnetosheath
+%{                    
+        %magnetosheath 
         if windows > 1 && ~isempty(index_of_crossing) 
             how_many_boundaries = how_many_boundaries + 1;
             %to determine sheath flow always at boundary
-            bound_LT_and_r  = location_data(10:11, location_data(1,:) == magnetometer_data(1,index_of_crossing)...
+            bound_LT_and_r  = location_data(10:13, location_data(1,:) == magnetometer_data(1,index_of_crossing)...
                 & location_data(2,:) == magnetometer_data(2,index_of_crossing)...                                     
                 & location_data(3,:) == magnetometer_data(3,index_of_crossing)...
                 & location_data(4,:) == magnetometer_data(4,index_of_crossing));
@@ -133,10 +133,6 @@ end
             %boundary crossing so all windows after a boundary have
             %constant density temp and v
             %[density,T,v_r_rel,v_phi_rel] = find_moment_data(start+j-1,ordered_crossings,moments);
-
-
-%in magnetosphere parameters are determined as a function of R and in
-%sheath they are determined as a function of LT?????????
 
             %if isnan(density) || isnan(T) || isnan(v_r_rel) || isnan(v_phi_rel)
                 v_r_rel = 1000*polyval(coeffs_v_r_rel,bound_LT_and_r(1,1));%convert m/s
@@ -169,10 +165,10 @@ end
                     position = min([max_windows,windows])-k+1;
                     do_it = true;
                 end
-  
+  %}
                 if do_it
                     try
-                        clearvars -except location_data regions_boundary_data mag_data_atalysis_fileID magnetometer_data...
+                        clearvars -except location_data regions_boundary_data mag_data_atalysis_fileID magnetometer_data ion_mass...
                             i length_of_window do_it mag_data coeffs_density coeffs_T num_of_bad_locations num_of_bad_slopes...
                             save_data formatSpec_w boundaries_in_file crossing_date dates j ordered_crossings max_windows...
                             length_of_magnetometer_data coeffs_v_phi_rel coeffs_v_r_rel avoid_boundary_offset avagdro_number...
@@ -251,7 +247,6 @@ end
                             density = number_density*ion_mass;
                             T = get_temperature(H);
                         end
-
 
                         larmor_radius = get_larmor_radius(T, B_total_mean, mag_is_1_sheath_is_0);
             %           l_parallel = get_dipole_magnetic_field_line_length(location_initial(13), location_initial(10));  
@@ -346,11 +341,12 @@ end
 
 %save('qs','qs_data')
 %save('nqs','nqs_data')
-
+allmodel_10mins_msphere = data;
+save('allmodel_10mins_msphere','allmodel_10mins_msphere');
 %allmodel_15mins_sheath = data;
 %momentmodel_15mins_sheath = data;
-allmodel_10mins_sheath = data;
-save('allmodel_10mins_sheath','allmodel_10mins_sheath');
+% allmodel_10mins_sheath = data;
+% save('allmodel_10mins_sheath','allmodel_10mins_sheath');
 %allmodel_10mins_shock = data;
 %save('allmodel_10mins_shock','allmodel_10mins_shock')
 %allmodel_10mins_sheath = load('all_model_10mins_sheath')

@@ -9,6 +9,9 @@ function [coeff_MHD, coeff_KAW, f_MHD, f_KAW, power_spectrum_MHD, power_spectrum
         length_f_MHD = length(f_MHD);
         length_f_KAW = length(f_KAW);
         
+        if length_f_MHD == 0 && length_f_KAW == 0
+            5
+        end
         
         if  length_f_MHD > 5 & length_f_KAW > 5
             coeff_MHD = coeffvalues(fit(log(f_MHD.'), log(power_spectrum_MHD.'), 'poly1'));

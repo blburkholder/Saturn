@@ -221,5 +221,5 @@ function [magnetometer_data] = get_magnetometer_data(file_number)
     
 %     date_of_magnetometer_measurement = datetime(datenum(magnetometer_data(1,:), magnetometer_data(2,:), magnetometer_data(3,:), magnetometer_data(4,:), magnetometer_data(5,:), floor(magnetometer_data(6,:))), 'ConvertFrom', 'datenum');
 %     date_of_magnetometer_measurement = datenum(magnetometer_data(1,:), magnetometer_data(2,:), magnetometer_data(3,:), magnetometer_data(4,:), magnetometer_data(5,:), floor(magnetometer_data(6,:)));
-    fclose(fileID)
+    fclose(fileID);
 end
