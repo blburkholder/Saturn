@@ -21,6 +21,7 @@ function [f, power_spectrum, Num_Unique_Pts] = power_spectrum_morlet(magnetomete
     
     Num_Unique_Pts = ceil((NFFT+1)/2);
     f = (0:Num_Unique_Pts-1)*f_sample/NFFT;
+    %f = f(1:length(f)-1);
     f = f(2:length(f));
 
 %     f = [1:size_of_data-1]*f_sample/size_of_data;

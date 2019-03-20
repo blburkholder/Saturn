@@ -34,7 +34,6 @@ function [f, power_spectrum, Num_Unique_Pts] = power_spectrum_fft(magnetometer_d
     end
 
     % Calculate frequency scale
-%     f = (0:Num_Unique_Pts-1)*f_sample/NFFT;
     f = (0:Num_Unique_Pts-1)*f_sample/NFFT;
     
     f = f(2:length(f));

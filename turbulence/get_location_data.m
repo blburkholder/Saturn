@@ -1,5 +1,5 @@
 function [location_data] = get_location_data()    
-    location_path_Name = '/home/computation/Documents/SaturnGit/Saturn/'; 
+    location_path_Name = '/home/computation/Documents/SaturnGit/Saturn/turbulence/'; 
     location_file_Name = 'Cassini_orbits_2004-2012.txt';    
     
     location_formatSpec = ['%d %d %d %d %f %f %f %f %f %f %f %f']; 

@@ -9,7 +9,7 @@ number_of_files = 181;
 length_of_window = 3600/6; 
 max_windows = 10;
 mag_is_1_sheath_is_0 = 1;
-avoid_boundary_offset = 120;
+avoid_boundary_offset = 20;
 
 ion_molar_mass = 18.01528e-3; %kg/mol (water)
 avagdro_number = 6.022140857e23;    
@@ -53,8 +53,8 @@ if ~mag_is_1_sheath_is_0
 end
 
 %for i=2:number_of_files
- for i = 2:169
-    
+ for i = 3:169
+    i
     start = boundaries_inside;
     
     [magnetometer_data] = get_magnetometer_data(i);
@@ -69,13 +69,7 @@ end
         magnetometer_data,dates,ordered_crossings,start,boundaries_inside,crossing_date,0);       
     [g,number_of_crossings] = size(boundaries_in_file);  
 
-    for j = 1:number_of_crossings
-        clearvars -except location_data regions_boundary_data mag_data_atalysis_fileID magnetometer_data i length_of_window... 
-            coeffs_density coeffs_T num_of_bad_locations num_of_bad_slopes save_data formatSpec_w boundaries_in_file ion_mass...
-            crossing_date dates j do_it length_of_magnetometer_data coeffs_v_r_rel coeffs_v_phi_rel avagdro_number... 
-            boundaries_inside number_of_crossings position region q data mag_is_1_sheath_is_0 mag_data avoid_boundary_offset...
-            how_many_boundaries moments modeled moment start p qs_data nqs_data split ordered_crossings max_windows
- 
+    for j = 1:number_of_crossings 
         [windows] = window_finder(boundaries_in_file,j,number_of_crossings,length_of_window/60,max_windows);
         index_of_crossing = find(dates == boundaries_in_file(8,j));
 
@@ -168,13 +162,6 @@ end
   %}
                 if do_it
                     try
-                        clearvars -except location_data regions_boundary_data mag_data_atalysis_fileID magnetometer_data ion_mass...
-                            i length_of_window do_it mag_data coeffs_density coeffs_T num_of_bad_locations num_of_bad_slopes...
-                            save_data formatSpec_w boundaries_in_file crossing_date dates j ordered_crossings max_windows...
-                            length_of_magnetometer_data coeffs_v_phi_rel coeffs_v_r_rel avoid_boundary_offset avagdro_number...
-                            index_of_crossing region windows k number_of_crossings position data q v_phi_rel v_r_rel density T...
-                            mag_is_1_sheath_is_0 how_many_boundaries moments modeled moment start split  boundaries_inside mag_data_to_analyze
-
                         location_initial(1:6,1) = mag_data_to_analyze(1:6,1);
                         location_initial(7:13,1) = location_data(5:11, location_data(1,:) == mag_data_to_analyze(1,1) ...
                             & location_data(2,:) == mag_data_to_analyze(2,1) ...                                     
@@ -236,7 +223,7 @@ end
                         [f, power_spectrum_morlet] = get_power_spectrum_morlet(B_fluctuation_perp, B_std_perp, delta_t);
                         %[f, power_spectrum_fft] = get_power_spectrum_fft(B_fluctuation_perp, B_std_perp, delta_t);
 
-                        [gyration_frequency] = get_gyration_frequency(B_tot, mag_is_1_sheath_is_0);
+                        [gyration_frequency] = get_gyration_frequency(B_tot, ion_molar_mass);
 
                         %is this the same in sheath?
                         H = get_scale_height(location_initial(13));
@@ -248,7 +235,7 @@ end
                             T = get_temperature(H);
                         end
 
-                        larmor_radius = get_larmor_radius(T, B_total_mean, mag_is_1_sheath_is_0);
+                        larmor_radius = get_larmor_radius(T, B_total_mean, ion_molar_mass,1);
             %           l_parallel = get_dipole_magnetic_field_line_length(location_initial(13), location_initial(10));  
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%might require different model in
@@ -260,18 +247,17 @@ end
                         %q_MHD_delB = get_heating_coefficient_MHD(B_total_std, B_total_mean, density, l_parallel, l_prependicular);
                         q_MHD_strong_delB = get_heating_coefficient_MHD_strong(B_total_std, B_total_mean, density, l_prependicular);
 
-                        [coeff_MHD, coeff_KAW, f_MHD, f_KAW, power_spectrum_MHD, power_spectrum_KAW] = get_power_spectrum_slopes(f, power_spectrum_morlet, gyration_frequency);      
+                        [coeff_MHD, coeff_KAW, f_MHD, f_KAW, power_spectrum_MHD, power_spectrum_KAW] = get_power_spectrum_slopes(f, power_spectrum_morlet, gyration_frequency,1);      
                         %[coeff_MHD, coeff_KAW, f_MHD, f_KAW, power_spectrum_MHD, power_spectrum_KAW] = get_power_spectrum_slopes(f, power_spectrum_fft, gyration_frequency);       
     
-                        k_prependicular_MHD = get_k_prependicular(f_MHD, v_phi_rel, v_r_rel, B_vector_mean,mag_is_1_sheath_is_0);
-                        k_prependicular_KAW = get_k_prependicular(f_KAW, v_phi_rel, v_r_rel, B_vector_mean,mag_is_1_sheath_is_0);
+                        k_prependicular_MHD = get_k_prependicular(f_MHD, v_phi_rel, v_r_rel, B_vector_mean);
+                        k_prependicular_KAW = get_k_prependicular(f_KAW, v_phi_rel, v_r_rel, B_vector_mean);
                         %Khi = get_Khi(B_total_std, B_total_mean, l_parallel, l_prependicular);
 
                         q_hybrid = 0;
 
                         if length(f_MHD) > 0
-                            %[q_MHD_PS, q_MHD] = get_heating_coefficient_MHD_PS(B_total_std, B_total_mean, power_spectrum_MHD, f_MHD, density, l_parallel, l_prependicular, v_phi_rel, k_prependicular_MHD);
-                            [q_MHD_strong_PS, q_MHD_strong] = get_heating_coefficient_MHD_strong_PS(B_total_std, B_total_mean, power_spectrum_MHD, f_MHD, density, l_prependicular, v_phi_rel, k_prependicular_MHD);
+                            [q_MHD_strong_PS, q_MHD_strong] = get_heating_coefficient_MHD_strong_PS(power_spectrum_MHD, f_MHD, density, k_prependicular_MHD);
                             q_hybrid = q_MHD_strong;
                         else
                             %q_MHD_PS = [];
