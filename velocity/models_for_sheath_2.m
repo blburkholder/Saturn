@@ -89,23 +89,23 @@
         data(13,ze_condition) = -999;
         data(20,ze_condition) = -999;
 
-        if crossings(7,i) == 1
-            z_condition = window_dates >= crossings(8,i) & window_dates <= crossings(8,i) + crossings(9,i)/2;
-        else
-            z_condition = window_dates <= crossings(8,i) & window_dates >= crossings(8,i) - crossings(9,i)/2;
-        end
+       % if crossings(7,i) == 1
+       %     z_condition = window_dates >= crossings(8,i) & window_dates <= crossings(8,i) + crossings(9,i)/2;
+       % else
+       %     z_condition = window_dates <= crossings(8,i) & window_dates >= crossings(8,i) - crossings(9,i)/2;
+       % end
 
         %calculates an average for each boundary
-        if ~isempty(v_phi_rel) && sum(z_condition) > 0
+        if ~isempty(v_phi_rel)% && sum(z_condition) > 0
             bsqr = bx(:).^2+by(:).^2+bz(:).^2;
 
             %qq = q(z_condition);
             %dd = d(z_condition);
             %window_dates(z_condition)
 
-            crossing_by_crossing_average(i,1) = max(q(z_condition));
-            crossing_by_crossing_average(i,2) = max(d(z_condition));
-            crossing_by_crossing_average(i,3) = min(v_phi_rel);
+            %crossing_by_crossing_average(i,1) = max(q(z_condition));
+            %crossing_by_crossing_average(i,2) = max(d(z_condition));
+            crossing_by_crossing_average(i,3) = nanmean(v_phi_rel);
             crossing_by_crossing_average(i,4) = nanmean(v_phi_relO);
             if crossings(7,i) == 2
                 cbcLT(i) = LT(1);
@@ -133,32 +133,16 @@ i
 % ylabel('log_{10}q (W/m^3)')
 % set(gca, 'FontSize', 16)
 
-figure; hold on
-vphi = crossing_by_crossing_average(:,3);
-qq = crossing_by_crossing_average(:,1);
-%dd = crossing_by_crossing_average(:,2);
-scatter(cbcLT(vphi ~= 0 & vphi < 1000),vphi(vphi ~=0 & vphi < 1000),[],log10(qq(vphi ~= 0& vphi < 1000)),'.')
-colorbar
-plot([0 20],[0 0],'k')
-plot([12 12],[-200 500],'k')
-xlabel('LT')
-ylabel('v_\phi')
-geomean(qq(vphi > 200 & ~isnan(qq)))
-geomean(qq(vphi > 100 & vphi < 200 & ~isnan(qq)))
-geomean(qq(vphi<100 & ~isnan(qq) & vphi ~= 0))
-
-figure
-scatter(vphi(cbcLT>10 & cbcLT<12),log10(qq(cbcLT>10 & cbcLT<12)),'.')
 
 figure
 vphi = crossing_by_crossing_average(:,3);
-%vphiO = crossing_by_crossing_average(:,4);
+vphiO = crossing_by_crossing_average(:,4);
 plot([3 20],[0 0],'k')
 hold on
 plot([12 12],[-400 500],'k')
 p1 = scatter(cbcLT(vphi<1000),vphi(vphi<1000),'g.');
-%p2 = scatter(cbcLT(vphiO<1000),vphiO(vphiO<1000),'b.');
-%legend([p1,p2],'protons','oxygen')
+p2 = scatter(cbcLT(vphiO<1000),vphiO(vphiO<1000),'b.');
+legend([p1,p2],'protons','W^+')
 if mag_is_1_sheath_is_2 == 1
     scatter(cbcLT(vphi<=0),vphi(vphi<=0),'rp')
     scatter(cbcLT(vphiO<=0),vphiO(vphiO<=0),'rp')

@@ -1,17 +1,30 @@
-load(['q_d_data/lat.mat'])
-load(['q_d_data/LT.mat'])
-load(['q_d_data/R'])
-load(['q_d_data/tfb'])
-load(['q_d_data/fucktuation_perp'])
-load(['q_d_data/fucktuation_par'])
-load(['q_d_data/mva_eigvals.mat'])
-load(['q_d_data/nl_measure.mat'])
-load(['q_d_data/q'])
-load(['q_d_data/d'])
+% load(['q_d_data/lat.mat'])
+% load(['q_d_data/LT.mat'])
+% load(['q_d_data/R'])
+% load(['q_d_data/tfb'])
+% load(['q_d_data/fucktuation_perp'])
+% load(['q_d_data/fucktuation_par'])
+% load(['q_d_data/mva_eigvals.mat'])
+% load(['q_d_data/nl_measure.mat'])
+% load(['q_d_data/q'])
+% load(['q_d_data/d'])
+% load(['q_d_data/current_sheet'])
+
+load(['lat.mat'])
+load(['LT.mat'])
+load(['R'])
+load(['tfb'])
+load(['fucktuation_perp'])
+load(['fucktuation_par'])
+load(['mva_eigvals.mat'])
+load(['nl_measure.mat'])
+load(['q'])
+load(['d'])
+load(['current_sheet'])
 
 fucktuation = fucktuation_perp.^2+fucktuation_par.^2;
-q = q/sqrt(0.001);
-d = d/sqrt(0.001);
+%q = q/sqrt(0.001);
+%d = d/sqrt(0.001);
 
 figure
 scatter(LT,log10(mva_eigvals),[],log10(q),'.');
@@ -101,7 +114,7 @@ ind = find(yvals == max(yvals));
 stdd = max([f.c1,f.c2]);
 plot([xx(ind)+stdd,xx(ind)+stdd],[0 max(yvals)])
 thresh1 = xx(ind) + stdd;
-title(['nonlinear measure - ',num2str(100*sum(log10(nl_measure) >= thresh1)/length(nl_measure)),'% active'])
+title(['nonlinear measure - ',num2str(100*sum(log10(nl_measure) >= thresh1 & current_sheet)/length(nl_measure)),'% active'])
 set(gca, 'FontSize', 12)
 
 figure
@@ -118,7 +131,7 @@ ind = find(yvals == max(yvals));
 stdd = max([f.c1,f.c2]);
 plot([xx(ind)+stdd,xx(ind)+stdd],[0 max(yvals)])
 thresh2 = xx(ind) + stdd;
-title(['variance - ',num2str(100*sum(log10(mva_eigvals) >= thresh2)/length(mva_eigvals)),'% active'])
+title(['variance - ',num2str(100*sum(log10(mva_eigvals) >= thresh2 & current_sheet)/length(mva_eigvals)),'% active'])
 set(gca, 'FontSize', 12)
 
 figure
@@ -135,7 +148,7 @@ ind = find(yvals == max(yvals));
 stdd = max([f.c1,f.c2]);
 plot([xx(ind)+stdd,xx(ind)+stdd],[0 max(yvals)])
 thresh3 = xx(ind) + stdd;
-title(['fluctuation - ',num2str(100*sum(log10(fucktuation) >= thresh3)/length(fucktuation)),'% active'])
+title(['fluctuation - ',num2str(100*sum(log10(fucktuation) >= thresh3 & current_sheet)/length(fucktuation)),'% active'])
 set(gca, 'FontSize', 12)
 
 figure
@@ -144,14 +157,14 @@ y = R.*sin(pi*LT/12-pi);
 scatter(x,y,'k.')
 hold on
 plot([-60 40],[0 0],'k')
-scatter(x(log10(nl_measure) >= thresh1),y(log10(nl_measure) >= thresh1),[150],'c.')
-scatter(x(log10(mva_eigvals) >= thresh2),y(log10(mva_eigvals) >= thresh2),[150],'m.')
-scatter(x(log10(fucktuation) >= thresh3),y(log10(fucktuation) >= thresh3),[150],'y.')
-scatter(x(log10(nl_measure) >= thresh1 & log10(mva_eigvals) >= thresh2 & log10(fucktuation) >= thresh3),...
-    y(log10(nl_measure) >= thresh1 & log10(mva_eigvals) >= thresh2 & log10(fucktuation) >= thresh3) ,'rp')
-title(['active ',num2str(100*sum(log10(nl_measure) >=...
+scatter(x(log10(nl_measure) >= thresh1 & current_sheet),y(log10(nl_measure) >= thresh1 & current_sheet),[150],'c.')
+scatter(x(log10(mva_eigvals) >= thresh2 & current_sheet),y(log10(mva_eigvals) >= thresh2 & current_sheet),[150],'m.')
+scatter(x(log10(fucktuation) >= thresh3 & current_sheet),y(log10(fucktuation) >= thresh3 & current_sheet),[150],'y.')
+%scatter(x(log10(nl_measure) >= thresh1 & log10(mva_eigvals) >= thresh2 & log10(fucktuation) >= thresh3),...
+    %y(log10(nl_measure) >= thresh1 & log10(mva_eigvals) >= thresh2 & log10(fucktuation) >= thresh3) ,'rp')
+title(['active ',num2str(100*sum((log10(nl_measure) >=...
     thresh1 | log10(mva_eigvals) >= thresh2 | log10(fucktuation) >=...
-    thresh3)/length(R)),'% \pm',num2str(100/sqrt(4*length(R))),'%'])
+    thresh3) & current_sheet)/length(R)),'% \pm',num2str(100/sqrt(4*length(R))),'%'])
 legend('all windows','reference line','embedding','variance','fluctuation','AND')
 ylabel('Y (R_s)')
 xlabel('X (R_s)')
@@ -173,7 +186,7 @@ hold on
 histogram(log10(q(LT<=12)),'facecolor','blue','BinWidth',0.1)
 xlabel('log_{10}(q)')
 set(gca, 'FontSize', 24)
-histogram(log10(q(log10(nl_measure)>=thresh1 | log10(mva_eigvals)>=thresh2 | log10(fucktuation) >= thresh3)),'facecolor','red','BinWidth',0.1)
+histogram(log10(q((log10(nl_measure)>=thresh1 | log10(mva_eigvals)>=thresh2 | log10(fucktuation) >= thresh3) & current_sheet)),'facecolor','red','BinWidth',0.1)
 box off;
 legend('dusk','dawn','active')
 ax1 = gca; % current axes
@@ -197,7 +210,7 @@ hold on
 histogram(log10(d(LT <= 12)),'facecolor','blue','BinWidth',0.1)
 xlabel('log_{10}(D_\perp)')
 set(gca, 'FontSize', 24)
-histogram(log10(d(log10(nl_measure)>=thresh1 | log10(mva_eigvals)>=thresh2 | log10(fucktuation) >= thresh3)),'facecolor','red','BinWidth',0.1)
+histogram(log10(d((log10(nl_measure)>=thresh1 | log10(mva_eigvals)>=thresh2 | log10(fucktuation) >= thresh3) & current_sheet)),'facecolor','red','BinWidth',0.1)
 box off;
 legend('dusk','dawn','active')
 ax1 = gca; % current axes
@@ -214,6 +227,10 @@ errorbar(10:10:100,log10(dtime),dtime_err,'Parent',ax2,'Color','r','LineWidth',2
 xlabel('time from boundary')
 ylabel('log_{10}(D_\perp)')
 set(gca, 'FontSize', 24)
+
+
+
+
 
 
 

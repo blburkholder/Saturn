@@ -1,6 +1,6 @@
 %ONLY FOR CASSINI DATA INSIDE MAGSPHERE
 %BUT SIMULATION DATA WILL HAVE MASS = 1
-function [q_MHD_strong,d_perp] = heating_rate_density(bx,by,bz,ux,uz,rhon,delta_t,ion_kg)
+function [q_MHD_strong,d_perp] = heating_rate_density(bx,by,bz,ux,uz,rhon,delta_t,ion_kg,H)
 
     ion_molar_mass = ion_kg*0.001;
     avagdro_number = 6.022140857e23;
@@ -19,7 +19,8 @@ function [q_MHD_strong,d_perp] = heating_rate_density(bx,by,bz,ux,uz,rhon,delta_
         get_B_std_vector_components(B_vector_mean, B_x, B_y, B_z);
 
     [f, power_spectrum_perp] = get_power_spectrum_morlet(B_fluctuation_perp, B_std_perp, delta_t);
-    %[f, power_spectrumm] = get_power_spectrum_fft(B_fluctuation_perp, B_std_perp, delta_t);
+    [~, power_spectrum_par] = get_power_spectrum_morlet(B_fluctuation_parallel/B_total_mean, B_std_parallel, delta_t);
+    %[f, power_spectrum_par] = get_power_spectrum_fft(B_fluctuation_parallel/B_total_mean, B_std_parallel, delta_t);
     rho = rhon*ion_mass;
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -32,12 +33,12 @@ function [q_MHD_strong,d_perp] = heating_rate_density(bx,by,bz,ux,uz,rhon,delta_
         q_MHD_strong = 0;
     end
 
-    Bf2 = mean(sum(B_fluctuation_parallel.^2));
-    bsqr = B_vector_mean(1)^2+B_vector_mean(2)^2+B_vector_mean(3)^2;
-    mass_density = rhon*ion_mass;
-    beta = 1;
+    %Bf2 = mean(sum(B_fluctuation_parallel.^2))
+    Bf2 = mean(k_prependicular_MHD.^2.*power_spectrum_par.^2);
+    T = get_temperature(H);
+    larmori = get_larmor_radius(T, sqrt(B_total_mean),.018);
+    jays_int = evalintegral(k_prependicular_MHD*larmori);
+    Va = sqrt(B_total_mean)./sqrt(mu_0*rho);
     kz = 2*pi/(60000000);
-    emoob = exp(-1/beta);
-    Va = sqrt(bsqr)./sqrt(mu_0*mass_density);
-    d_perp = sqrt(pi/2)*Bf2*Va/(bsqr*kz)*emoob;
+    d_perp = sqrt(pi/2)*Bf2*Va/(kz)*jays_int;
 end

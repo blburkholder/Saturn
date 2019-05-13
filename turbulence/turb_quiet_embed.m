@@ -23,6 +23,7 @@ R = zeros(1,50000);
 lat = zeros(1,50000);
 LT = zeros(1,50000);
 tfb = zeros(1,50000);
+current_sheet = zeros(1,50000);
 
 mu_0 = 4*pi()*1e-7; %N/A^2
 kB = 1.3806488e-23; %J/K
@@ -58,9 +59,10 @@ for i = 2:169
             stfb1 = zeros(winds-avoid_boundary_offset,1);
             q1 = zeros(winds-avoid_boundary_offset,1);
             d1 = zeros(winds-avoid_boundary_offset,1);
+            cs1 = zeros(winds-avoid_boundary_offset,1);
 
-            parfor k = avoid_boundary_offset:(winds-1)
-     %      for k = avoid_boundary_offset:(winds-1)
+%            parfor k = avoid_boundary_offset:(winds-1)
+           for k = avoid_boundary_offset:(winds-1)
                 do_it = false;
                 if boundaries_in_file(7,j) == 1 && (index_of_crossing + k*slide_length + length_of_window - 1 <= length_of_magnetometer_data)
                     %go forwards
@@ -89,6 +91,9 @@ for i = 2:169
                     B_r = mean(reshape(b_r,[avg,length_of_window/avg])',2);
                     B_theta = mean(reshape(b_theta,[avg,length_of_window/avg])',2);
                     B_phi = mean(reshape(b_phi,[avg,length_of_window/avg,])',2);
+                    if ((sum(B_r > 0) > 0 && sum(B_r < 0) > 0) && (sum(B_theta > 0) > 0 && sum(B_theta < 0) > 0)) || ((sum(B_r > 0) > 0 && sum(B_r < 0) > 0) && (sum(B_phi > 0) > 0 && sum(B_phi < 0) > 0)) || ((sum(B_phi > 0) > 0 && sum(B_phi < 0) > 0) && (sum(B_theta > 0) > 0 && sum(B_theta < 0) > 0))
+                        cs1(k) = 1;
+                    end
                     
 %                     [num2str(mag_data_to_analyze(1,1)),' ',num2str(mag_data_to_analyze(2,1)),' ',num2str(mag_data_to_analyze(3,1)),' ',...
 %                         num2str(mag_data_to_analyze(4,1)),':',num2str(mag_data_to_analyze(5,1)),':',num2str(mag_data_to_analyze(6,1)),' j =',num2str(j),' k = ',num2str(k)]
@@ -110,7 +115,7 @@ for i = 2:169
                      [ux, uz] = get_v_rel(loc(4));
                      number_density = get_density(loc(1), H, loc(4));                  
                      [q_MHD,dd] = heating_rate_density(B_r,B_theta,B_phi,...
-                         ux,uz,number_density,avg,18);
+                         ux,uz,number_density,avg,18,H)
 
                     sects1(k) = mag_dates(1);
                     sects2(k) = tot;
@@ -183,6 +188,7 @@ for i = 2:169
             fucktuation_perp(zinds(1):zinds(1)+winds-1-avoid_boundary_offset) = sects5;
             q(zinds(1):zinds(1)+winds-1-avoid_boundary_offset) = q1;
             d(zinds(1):zinds(1)+winds-1-avoid_boundary_offset) = d1;
+            current_sheet(zinds(1):zinds(1)+winds-1-avoid_boundary_offset) = cs1;
 
             R(zinds(1):zinds(1)+winds-1-avoid_boundary_offset) = sr1;
             lat(zinds(1):zinds(1)+winds-1-avoid_boundary_offset) = slat1;
@@ -204,6 +210,7 @@ R = R(end_cond);
 lat = lat(end_cond);
 LT = LT(end_cond);
 tfb = tfb(end_cond);
+current_sheet = current_sheet(end_cond);
 
 save('window_dates','window_dates')
 save('nl_measure','nl_measure')
@@ -216,5 +223,6 @@ save('R','R')
 save('lat','lat')
 save('LT','LT')
 save('tfb','tfb')
+save('current_sheet','current_sheet')
 
-disturbed_anal
+%disturbed_anal

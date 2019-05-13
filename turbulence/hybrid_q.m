@@ -2,9 +2,9 @@
 bx = ans.BX;
 by = ans.BY;
 bz = ans.BZ;
-%ux = ans.UX;
-%uz = ans.UZ;
-%rhon = ans.DENS;
+ux = ans.UX;
+uz = ans.UZ;
+rhon = mean(mean(ans.DENS));
 %temp = ans.TEMP_P;
 
 bx = bx(:,2:end-1);
@@ -17,9 +17,11 @@ avagdro_number = 6.022140857e23;
 ion_mass = 1e-3/avagdro_number;
 mu_0 = 4*pi()*1e-7; %N/A^2
 
-[v_phi,v_r] = get_v_rel(R);
+%[v_phi,v_r] = get_v_rel(R);
+v_phi = mean(mean(ux));
+v_r = mean(mean(uz));
 H = get_scale_height(R);
-rhon = get_density(lat,H,R);
+%rhon = get_density(lat,H,R)
 rho = rhon*ion_mass;
 temp = get_temperature(H);
 
@@ -59,7 +61,8 @@ histogram(log10(bbbhist(:)))
 
 lambda = 360000;                 %grid separation (in ion inertial lengths?)
 ks = 2*pi/lambda;            % sampling wavenumber                      
-L1 = 129;             % Length of signal (in ion intertial lengths?)
+L1 = 129; % Length of signal (in ion intertial lengths?)
+%L2 = 137;
 L2 = 108;
 
 perpX = fft2(squeeze(B_perp_pertr(1,:,:)));
@@ -80,7 +83,7 @@ cond1 = ((kgrid1-k1(ceil(L1/2))).^2+(kgrid2-k2(ceil(L2/2))).^2) > pii(i)^2  & ((
 absx = abs(fftshift(perpX));
 absz = abs(fftshift(perpZ));
 absy = abs(fftshift(perpY));
-fluct = ((absx.^2++absy.^2+absz.^2)*pii(i)).^(3/2);
+fluct = ((absx.^2+absy.^2+absz.^2)*pii(i)).^(3/2);
 sumsum = sumsum + pii(i)*sum(sum(fluct(cond1)))/sqrt(rho*mu_0^3);
 
 % absx(cond1) = NaN;
