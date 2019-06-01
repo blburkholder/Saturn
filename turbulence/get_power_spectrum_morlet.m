@@ -80,6 +80,7 @@ function [f, power_spectrum] = get_power_spectrum_morlet(B_fluctuation_perp, B_t
     [f, power_spectrum_tot_phy,N] = power_spectrum_morlet(B_fluctuation_perp(3,:),delta_t);
 
     power_spectrum_tot = sqrt(power_spectrum_tot_r.^2 + power_spectrum_tot_theta.^2 + power_spectrum_tot_phy.^2);
+    %power_spectrum_tot = power_spectrum_tot_r + power_spectrum_tot_theta + power_spectrum_tot_phy;
 
 %     B_fluctuation_perp_mag = sqrt(B_fluctuation_perp(1,:).^2 + B_fluctuation_perp(2,:).^2 + B_fluctuation_perp(3,:).^2);
 %

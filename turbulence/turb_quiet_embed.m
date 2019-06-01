@@ -18,17 +18,13 @@ nl_measure = zeros(1,50000);
 mva_eigvals = zeros(1,50000);
 window_dates = zeros(1,50000);
 q = zeros(1,50000);
-d = zeros(1,50000);
+d_complicated_integral = zeros(1,50000);
+d_beta_exponential = zeros(1,50000);
 R = zeros(1,50000);
 lat = zeros(1,50000);
 LT = zeros(1,50000);
 tfb = zeros(1,50000);
 current_sheet = zeros(1,50000);
-
-mu_0 = 4*pi()*1e-7; %N/A^2
-kB = 1.3806488e-23; %J/K
-avagdro_number = 6.022140857e23;    
-O_mass = 16/avagdro_number;
 
 for i = 2:169
     start = boundaries_inside;
@@ -58,11 +54,12 @@ for i = 2:169
             sLT1 = zeros(winds-avoid_boundary_offset,1);
             stfb1 = zeros(winds-avoid_boundary_offset,1);
             q1 = zeros(winds-avoid_boundary_offset,1);
-            d1 = zeros(winds-avoid_boundary_offset,1);
+            dci = zeros(winds-avoid_boundary_offset,1);
+            dbe = zeros(winds-avoid_boundary_offset,1);
             cs1 = zeros(winds-avoid_boundary_offset,1);
 
-%            parfor k = avoid_boundary_offset:(winds-1)
-           for k = avoid_boundary_offset:(winds-1)
+ %           parfor k = avoid_boundary_offset:(winds-1)
+          for k = avoid_boundary_offset:(winds-1)
                 do_it = false;
                 if boundaries_in_file(7,j) == 1 && (index_of_crossing + k*slide_length + length_of_window - 1 <= length_of_magnetometer_data)
                     %go forwards
@@ -91,6 +88,7 @@ for i = 2:169
                     B_r = mean(reshape(b_r,[avg,length_of_window/avg])',2);
                     B_theta = mean(reshape(b_theta,[avg,length_of_window/avg])',2);
                     B_phi = mean(reshape(b_phi,[avg,length_of_window/avg,])',2);
+                    %check for current sheet!
                     if ((sum(B_r > 0) > 0 && sum(B_r < 0) > 0) && (sum(B_theta > 0) > 0 && sum(B_theta < 0) > 0)) || ((sum(B_r > 0) > 0 && sum(B_r < 0) > 0) && (sum(B_phi > 0) > 0 && sum(B_phi < 0) > 0)) || ((sum(B_phi > 0) > 0 && sum(B_phi < 0) > 0) && (sum(B_theta > 0) > 0 && sum(B_theta < 0) > 0))
                         cs1(k) = 1;
                     end
@@ -113,21 +111,26 @@ for i = 2:169
                     %heating rate density stuff     
                      H = get_scale_height(loc(4));
                      [ux, uz] = get_v_rel(loc(4));
-                     number_density = get_density(loc(1), H, loc(4));                  
-                     [q_MHD,dd] = heating_rate_density(B_r,B_theta,B_phi,...
-                         ux,uz,number_density,avg,18,H)
+                     number_density = get_density(loc(1), H, loc(4));  
+%                     if (log10(tot) >= thresh1 || log10(v_tot) >= thresh2 || log10(fpar_tot^2+fperp_tot^2) >= thresh3)
+%                      [q_MHD,ddd] = heating_rate_density(B_r,B_theta,B_phi,...
+%                          ux,uz,number_density,avg,18,H)
+%                      end
+                     [q_MHD,dd,ddd] = heating_rate_density(b_r,b_theta,b_phi,...
+                         ux,uz,number_density,1,18,H);
 
                     sects1(k) = mag_dates(1);
                     sects2(k) = tot;
                     sects3(k) = v_tot;
                     sects4(k) = fpar_tot;
                     sects5(k) = fperp_tot;
-                    sr1(k) = loc(4); 
+                     sr1(k) = loc(4); 
                     slat1(k) = loc(1); 
                     sLT1(k) = loc(3); 
                     stfb1(k) = k+1;
                     q1(k) = q_MHD;
-                    d1(k) = dd;
+                    dci(k) = dd;
+                    dbe(k) = ddd;
 
 %                    if (log10(tot) >= thresh1 || log10(v_tot) >= thresh2 || log10(fpar_tot^2+fperp_tot^2) >= thresh3)
 %                       h = figure; set(h,'Visible','off');
@@ -187,10 +190,11 @@ for i = 2:169
             fucktuation_par(zinds(1):zinds(1)+winds-1-avoid_boundary_offset) = sects4;
             fucktuation_perp(zinds(1):zinds(1)+winds-1-avoid_boundary_offset) = sects5;
             q(zinds(1):zinds(1)+winds-1-avoid_boundary_offset) = q1;
-            d(zinds(1):zinds(1)+winds-1-avoid_boundary_offset) = d1;
+            d_complicated_integral(zinds(1):zinds(1)+winds-1-avoid_boundary_offset) = dci;
+            d_beta_exponential(zinds(1):zinds(1)+winds-1-avoid_boundary_offset) = dbe;
             current_sheet(zinds(1):zinds(1)+winds-1-avoid_boundary_offset) = cs1;
-
-            R(zinds(1):zinds(1)+winds-1-avoid_boundary_offset) = sr1;
+% 
+             R(zinds(1):zinds(1)+winds-1-avoid_boundary_offset) = sr1;
             lat(zinds(1):zinds(1)+winds-1-avoid_boundary_offset) = slat1;
             LT(zinds(1):zinds(1)+winds-1-avoid_boundary_offset) = sLT1;
             tfb(zinds(1):zinds(1)+winds-1-avoid_boundary_offset) = stfb1;
@@ -205,7 +209,8 @@ fucktuation_perp = fucktuation_perp(end_cond);
 fucktuation_par = fucktuation_par(end_cond);
 mva_eigvals = mva_eigvals(end_cond);
 q = q(end_cond);
-d = d(end_cond);
+d_complicated_integral = d_complicated_integral(end_cond);
+d_beta_exponential = d_beta_exponential(end_cond);
 R = R(end_cond);
 lat = lat(end_cond);
 LT = LT(end_cond);
@@ -218,11 +223,12 @@ save('mva_eigvals','mva_eigvals')
 save('fucktuation_perp','fucktuation_perp')
 save('fucktuation_par','fucktuation_par')
 save('q','q')
-save('d','d')
+save('d_complicated_integral','d_complicated_integral')
+save('d_beta_exponential','d_beta_exponential')
 save('R','R')
 save('lat','lat')
 save('LT','LT')
 save('tfb','tfb')
 save('current_sheet','current_sheet')
 
-%disturbed_anal
+disturbed_anal
