@@ -26,7 +26,12 @@ LT = zeros(1,50000);
 tfb = zeros(1,50000);
 current_sheet = zeros(1,50000);
 
+thresh1 = thresh(1);
+thresh2 = thresh(2);
+thresh3 = thresh(3);
+
 for i = 2:169
+%for i = 138
     start = boundaries_inside;
     [magnetometer_data] = get_magnetometer_data(i);
     [n, length_of_magnetometer_data] = size(magnetometer_data);
@@ -58,8 +63,8 @@ for i = 2:169
             dbe = zeros(winds-avoid_boundary_offset,1);
             cs1 = zeros(winds-avoid_boundary_offset,1);
 
- %           parfor k = avoid_boundary_offset:(winds-1)
-          for k = avoid_boundary_offset:(winds-1)
+            parfor k = avoid_boundary_offset:(winds-1)
+ %         for k = avoid_boundary_offset:(winds-1)
                 do_it = false;
                 if boundaries_in_file(7,j) == 1 && (index_of_crossing + k*slide_length + length_of_window - 1 <= length_of_magnetometer_data)
                     %go forwards
@@ -96,7 +101,7 @@ for i = 2:169
 %                     [num2str(mag_data_to_analyze(1,1)),' ',num2str(mag_data_to_analyze(2,1)),' ',num2str(mag_data_to_analyze(3,1)),' ',...
 %                         num2str(mag_data_to_analyze(4,1)),':',num2str(mag_data_to_analyze(5,1)),':',num2str(mag_data_to_analyze(6,1)),' j =',num2str(j),' k = ',num2str(k)]
 % % 
-     %                if j == 1428 && k == 12
+%                     if j == 1428 && k == 12
                     %variance analysis
                     [e1,e2,e3] = B_var(B_r,B_theta,B_phi);
                     v_tot = geomean([e1,e2,e3]);
@@ -132,54 +137,50 @@ for i = 2:169
                     dci(k) = dd;
                     dbe(k) = ddd;
 
-%                    if (log10(tot) >= thresh1 || log10(v_tot) >= thresh2 || log10(fpar_tot^2+fperp_tot^2) >= thresh3)
-%                       h = figure; set(h,'Visible','off');
-%                       set(gcf, 'Units', 'Normalized', 'OuterPosition', [0, 0.04, 0.7, 0.74]);
-%                       plot((0:length(B_theta)-1)*10,B_r,'r','LineWidth',2)
-%                       hold on
-%                       plot((0:length(B_theta)-1)*10,B_theta,'g','LineWidth',2)
-%                       plot((0:length(B_theta)-1)*10,B_phi,'b','LineWidth',2)
-%                       ylabel('magnetic field (T)')
-%                       xlabel('time (s)')
-%                       legend('B_r','B_\theta','B_\phi')
-%                       %title([num2str(mag_data_to_analyze(1,1)),'-',num2str(mag_data_to_analyze(2,1)),...
-%                       %    '-',num2str(mag_data_to_analyze(3,1)),' ',num2str(mag_data_to_analyze(4,1)),...
-%                       %    ':',num2str(mag_data_to_analyze(5,1),'%02.f'),' - NTS: ',...
-%                       %    num2str(log10(tot)),' VAR: ',num2str(log10(v_tot)),' FLUC ',num2str(log10(fpar_tot^2+fperp_tot^2))])
+                   if (log10(tot) >= thresh1 || log10(v_tot) >= thresh2 || log10(fpar_tot^2+fperp_tot^2) >= thresh3) && cs1(k) == 1
+                      h = figure; set(h,'Visible','off');
+                      %set(gcf, 'Units', 'Normalized', 'OuterPosition', [0, 0.04, 0.7, 0.74]);
+                      plot((0:length(B_theta)-1)*10,B_r,'r','LineWidth',2)
+                      hold on
+                      plot((0:length(B_theta)-1)*10,B_theta,'g','LineWidth',2)
+                      plot((0:length(B_theta)-1)*10,B_phi,'b','LineWidth',2)
+                      ylabel('magnetic field (T)')
+                      xlabel('time (s)')
+                      legend('B_r','B_\theta','B_\phi')
+                      title([num2str(mag_data_to_analyze(1,1)),'-',num2str(mag_data_to_analyze(2,1)),...
+                         '-',num2str(mag_data_to_analyze(3,1)),' ',num2str(mag_data_to_analyze(4,1)),...
+                         ':',num2str(mag_data_to_analyze(5,1),'%02.f'),' - NTS: ',...
+                         num2str(log10(tot)),' VAR: ',num2str(log10(v_tot)),' FLUC ',num2str(log10(fpar_tot^2+fperp_tot^2))])
 %                     title([num2str(mag_data_to_analyze(1,1)),'-',num2str(mag_data_to_analyze(2,1)),...
 %                       '-',num2str(mag_data_to_analyze(3,1)),' ',num2str(mag_data_to_analyze(4,1)),...
 %                       ':',num2str(mag_data_to_analyze(5,1),'%02.f')])
-%                       set(gca, 'FontSize', 24)
-%                       set(gca,'LineWidth',2)
-%                       saveas(h,[num2str(mag_data_to_analyze(1,1)),'_',num2str(mag_data_to_analyze(2,1)),...
-%                           '_',num2str(mag_data_to_analyze(3,1)),'-',num2str(mag_data_to_analyze(4,1)),...
-%                           '-',num2str(mag_data_to_analyze(5,1)),'.png']);
+                      %set(gca, 'FontSize', 24)
+                      %set(gca,'LineWidth',2)
+                      saveas(h,['active_mag/',num2str(mag_data_to_analyze(1,1)),'_',num2str(mag_data_to_analyze(2,1)),...
+                          '_',num2str(mag_data_to_analyze(3,1)),'-',num2str(mag_data_to_analyze(4,1)),...
+                          '-',num2str(mag_data_to_analyze(5,1)),'.png']);
 % 
-%                       h = figure;% set(h,'Visible','off');
-%                       set(gcf, 'Units', 'Normalized', 'OuterPosition', [0, 0.04, 0.7, 0.74]);
-%                       subplot(1,3,1)
-%                       plot(br1/1e-9,br2/1e-9,'r')
-%                       xlabel('B_{r1} (nT)')
-%                       ylabel('B_{r2} (nT)')
-%                       set(gca, 'FontSize', 24)
-%                       set(gca,'LineWidth',2)
-%                       subplot(1,3,2)
-%                       plot(bt1/1e-9,bt2/1e-9,'g')
-%                       xlabel('B_{\theta1} (nT)')
-%                       ylabel('B_{\theta2} (nT)')
-%                       set(gca, 'FontSize', 24)
-%                       set(gca,'LineWidth',2)
-%                       subplot(1,3,3)
-%                       plot(bp1/1e-9,bp2/1e-9,'b')
-%                       xlabel('B_{\phi1} (nT)')
-%                       ylabel('B_{\phi2} (nT)')
-%                       set(gca, 'FontSize', 24)
-%                       set(gca,'LineWidth',2)
-%                       saveas(h,['embed_',num2str(mag_data_to_analyze(1,1)),'_',num2str(mag_data_to_analyze(2,1)),...
-%                           '_',num2str(mag_data_to_analyze(3,1)),'_',num2str(mag_data_to_analyze(4,1)),...
-%                           '_',num2str(mag_data_to_analyze(5,1)),'.png']);
-                    %close all
-                    %end
+                      h = figure; hold on; set(h,'Visible','off');
+                      %set(gcf, 'Units', 'Normalized', 'OuterPosition', [0, 0.04, 0.7, 0.74]);
+                      br1 = br1 - mean(br1);
+                      br2 = br2 - mean(br2);
+                      plot(br1/1e-9,br2/1e-9,'r','LineWidth',2)
+                      bt1 = bt1 - mean(bt1);
+                      bt2 = bt2 - mean(bt2);
+                      plot(bt1/1e-9,bt2/1e-9,'g','LineWidth',2)
+                      bp1 = bp1 - mean(bp1);
+                      bp2 = bp2 - mean(bp2);
+                      plot(bp1/1e-9,bp2/1e-9,'b','LineWidth',2)
+                      xlabel('B_{i-d} (nT)')
+                      ylabel('B_{i} (nT)')
+                      legend('r','\theta','\phi','Location','Northwest')
+                      set(gca, 'FontSize', 16)
+                      set(gca,'LineWidth',1.5)
+                      saveas(h,['active_embedding/embed_',num2str(mag_data_to_analyze(1,1)),'_',num2str(mag_data_to_analyze(2,1)),...
+                          '_',num2str(mag_data_to_analyze(3,1)),'_',num2str(mag_data_to_analyze(4,1)),...
+                          '_',num2str(mag_data_to_analyze(5,1)),'.png']);
+                    close all
+                    end
                 end
             end
             zinds = find(R == 0);
